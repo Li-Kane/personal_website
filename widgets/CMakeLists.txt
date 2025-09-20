@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.15)
+project(WidgetTest)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+option(BUILD_EXAMPLES "Build example programs" ON)
+option(BUILD_BINDINGS "Build Python bindings" ON)
+
+add_subdirectory(src)
+if (BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+if (BUILD_BINDINGS)
+    add_subdirectory(bindings)
+endif()
