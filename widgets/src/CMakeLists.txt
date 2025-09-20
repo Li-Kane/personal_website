@@ -3,6 +3,8 @@ add_library(kdWidgets
 )
 add_library(kdWidgets::kdWidgets ALIAS kdWidgets)
 
+set_target_properties(kdWidgets PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_library(USOCKETS_LIBRARY uSockets.a PATHS /usr/local/include REQUIRED)
 find_package(ZLIB REQUIRED)
