@@ -9,7 +9,7 @@ def main():
 
     # Create a label widget
     label = kdwidgets.Label("Initial Text", kdwidgets.TextType.H1)
-    print(f"Created label with ID: {label.getId()}")
+    print(f"Created label with ID: {label.get_id()}")
 
     # Add the label to the server
     print("Adding label to server...")

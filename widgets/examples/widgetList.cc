@@ -29,7 +29,7 @@ int main() {
         };
 
     /* main page */
-    auto server = Server::create();
+    auto server = Server::create(9003);
     nlohmann::json page_layout = {
         {"display", "flex"},
         {"flexDirection", "column"},

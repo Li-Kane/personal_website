@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.15)
 # Enable compile commands. Used by LSPs.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-set(Eigen3_DIR /home/karana/pkgs/x86_64-ubuntu24/share/eigen3/cmake)
+set(Eigen3_DIR /usr/share/eigen3/cmake)
 find_package(Karana REQUIRED)
 
 add_executable(chatroom chatroom.cc)

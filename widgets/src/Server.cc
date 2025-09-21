@@ -5,9 +5,11 @@
  * for it to be listening before returning.
  */
 Server::Server(int port, std::string title, std::string host) {
+    std::cout << "Starting kdWidgets worker on port " << port << "...\n";
     worker_.thread_ =
         std::make_shared<std::thread>(&WorkerThread::runWorkerThread, &worker_, port, title, host);
 
+    std::cout << "Waiting for kdWidgets worker to start...\n";
     // dont return from server constructor until it is up and listening
     while (!worker_.listening_.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
