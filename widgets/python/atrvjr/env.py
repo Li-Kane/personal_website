@@ -47,7 +47,7 @@ def wrap_to_pi(x):
 
 
 def createMbody(fc: FrameContainer) -> Multibody:
-    urdf_file = Path().absolute() / "atrvjr" / "atrvjr.urdf"
+    urdf_file = Path().absolute() / "atrvjr.urdf"
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
     # convert to full6DOF hinge between root frame and rover.
     multibody_info.base_bodies[0].body.hinge = HingeDS(
@@ -124,7 +124,7 @@ def createEnvironment(
     # add ground
     ground_geom = BoxGeometry(size, size, thickness)
     mat_info.color = Color.WHITE
-    texture_file = Path().absolute() / "atrvjr" / "grid.png"
+    texture_file = Path().absolute() / "grid.png"
     grid_texture = Texture.lookupOrCreateTexture(str(texture_file))
     mat_info.colorMap = grid_texture
     grid = PhysicalMaterial(mat_info)
