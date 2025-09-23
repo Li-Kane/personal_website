@@ -8,6 +8,7 @@ pybind11_add_module(kdwidgets MODULE
     bindmessages.cc
     bindserver.cc
     bindhelpers.cc
+    json_caster.cc
 )
 
 target_include_directories(kdwidgets PRIVATE ${CMAKE_SOURCE_DIR}/include)

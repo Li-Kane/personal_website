@@ -32,6 +32,7 @@ from Karana.Scene.Scene_Py import (
     LAYER_ALL,
     LAYER_COLLISION,
     Texture,
+    OrthographicProjection
 )
 from Karana.Scene.ProxyScene_Py import ProxyScenePart, ProxyScene
 from Karana.Scene.CoalScene_Py import CoalScene
@@ -206,10 +207,8 @@ class ATRVEnv(gym.Env):
         self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(2,), dtype=np.float32)
 
         # initialize class variables
-        self._target = None
         self._left = None
         self._right = None
-        self._target_pos = None
         self._agent_pos = None
         self._agent_vel = None
         self._agent_roll = None
@@ -233,12 +232,31 @@ class ATRVEnv(gym.Env):
         # setup graphics if enabled
         if self.render_mode == "human":
             self._cleanup_graphics, viz_scene = self._mb.setupGraphics(axes=0.5, port=port, local_client='never')
-            viz_scene.defaultCamera().pointCameraAt(
-                [-0.8 * self.size, 0.0, self.size], [0, 0, 0], [0, 0, 1]
-            )
             self._proxy_scene = self._mb.getScene()
+            projection = OrthographicProjection()
+            projection.height = 25.0
+            projection.near = 0.1
+            projection.far = 100.0
+            viz_scene.defaultCamera().setProjection(projection)
         else:
             self._proxy_scene = ProxyScene(f"{self._mb.name()}_proxyscene", self._mb.virtualRoot())
+
+         # add target object
+        mat_info = PhysicalMaterialInfo()
+        mat_info.color = Color.BLUE
+        blue = PhysicalMaterial(mat_info)
+
+        # create the target
+        target_geom = CylinderGeometry(0.25, 0.05)
+        self._target = ProxyScenePart(
+            "target_part",
+            scene=self._proxy_scene,
+            geometry=target_geom,
+            material=blue,
+            layers=LAYER_GRAPHICS,
+        )
+        self._target.setUnitQuaternion(UnitQuaternion([1 / sqrt(2), 0, 0, 1 / sqrt(2)]))
+        self._target_pos = np.zeros(2, dtype=np.float32)
 
         # setup wheels, ground, and walls
         left_front_wheel, left_rear_wheel, right_front_wheel, right_rear_wheel = createEnvironment(
@@ -342,9 +360,6 @@ class ATRVEnv(gym.Env):
         self._terminated = False
         self._left = 0.0
         self._right = 0.0
-        self._target_pos = self.np_random.uniform(-self._bound, self._bound, size=(2,)).astype(
-            np.float32
-        )
         self._agent_pos = self.np_random.uniform(-self._bound, self._bound, size=(2,)).astype(
             np.float32
         )
@@ -366,24 +381,6 @@ class ATRVEnv(gym.Env):
             HomTran(q=orientation, vec=[self._agent_pos[0], self._agent_pos[1], 0])
         )
 
-        # add the target
-        if not self._target:
-            mat_info = PhysicalMaterialInfo()
-            mat_info.color = Color.BLUE
-            blue = PhysicalMaterial(mat_info)
-
-            # create the target
-            target_geom = CylinderGeometry(0.25, 0.05)
-            self._target = ProxyScenePart(
-                "target_part",
-                scene=self._proxy_scene,
-                geometry=target_geom,
-                material=blue,
-                layers=LAYER_GRAPHICS,
-            )
-        self._target.setTranslation([self._target_pos[0], self._target_pos[1], 0.25])
-        self._target.setUnitQuaternion(UnitQuaternion([1 / sqrt(2), 0, 0, 1 / sqrt(2)]))
-
         # simulation
         t_init = np.timedelta64(0, "ns")
         self._sp.setState(t_init, self._mb.dynamicsToState())
@@ -396,9 +393,12 @@ class ATRVEnv(gym.Env):
         del t
         self._proxy_scene.update()
         return self._get_obs(), self._get_info()
+    
+    def set_pointer_pos(self, pos: np.ndarray):
+        self.pointer_pos = pos
+        self._target.setTranslation([self.pointer_pos[0], self.pointer_pos[1], 0.25])
 
     def step(self, action: np.ndarray):
-        print("pointer pos:", self.pointer_pos)
         # initial target_pos
         self._target_pos = self.pointer_pos
 

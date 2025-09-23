@@ -41,23 +41,20 @@ def main():
     target = np.array([0.0, 0.0])
     def on_mouse_move(msg):
         if "x" in msg and "y" in msg:
-            target[1] = msg["x"] * 25.0
-            target[0] = msg["y"] * 25.0
-            env.set_attr("pointer_pos", target)
+            target[0] = msg["x"] * 25.0
+            target[1] = -msg["y"] * 25.0
+            env.env_method("set_pointer_pos", target)
             
 
     iframe.register_callback("mouse_move", on_mouse_move)
 
     obs = env.reset()
-    print("initial obs:", obs)
-    obs[0][0:2] = target
-    print("new obs:", obs)
-    while True:
-        action, _states = model.predict(obs, deterministic=True)
-        obs, reward, terminated, info = env.step(action)
-        obs[0][0:2] = target
-    input("Press Enter to start the simulation...")
-
+    try:
+        while True:
+            action, _states = model.predict(obs, deterministic=True)
+            obs, reward, terminated, info = env.step(action)
+    except KeyboardInterrupt:
+        print("Exiting loop on Ctrl+C")
 
 if __name__ == "__main__":
     main()
