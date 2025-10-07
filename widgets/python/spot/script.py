@@ -17,22 +17,18 @@ from isaacsim import SimulationApp
 
 simulation_app = SimulationApp({"headless": False})
 
-import argparse
+import gymnasium as gym
+from pxr import UsdGeom, Gf
 
 import carb
 import numpy as np
 from isaacsim.core.api import World
-from isaacsim.core.utils.prims import define_prim
+from isaacsim.core.utils.prims import define_prim, set_prim_property
 from isaacsim.robot.policy.examples.robots import SpotFlatTerrainPolicy
 from isaacsim.storage.native import get_assets_root_path
 
 first_step = True
 reset_needed = False
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--test", default=False, action="store_true", help="Run in test mode")
-args, unknown = parser.parse_known_args()
-
 
 # initialize robot on first step, run robot advance
 def on_physics_step(step_size) -> None:
@@ -59,6 +55,20 @@ if assets_root_path is None:
 prim = define_prim("/World/Ground", "Xform")
 asset_path = assets_root_path + "/Isaac/Environments/Grid/default_environment.usd"
 prim.GetReferences().AddReference(asset_path)
+
+# add visual cube
+target_prim = define_prim("/World/Cube2", "Cube")
+set_prim_property("/World/Cube2", "size", 0.2)
+
+# visual properties
+gprim = UsdGeom.Gprim(target_prim)
+gprim.CreateDisplayColorAttr([Gf.Vec3f(1.0, 0.0, 0.0)])
+gprim.CreateDisplayOpacityAttr([1.0])
+
+# transform properties
+xform = UsdGeom.Xformable(target_prim)
+ops = xform.GetOrderedXformOps()
+t_op = xform.AddTranslateOp()
 
 # spawn robot
 spot = SpotFlatTerrainPolicy(
@@ -89,13 +99,12 @@ while simulation_app.is_running():
             base_command = np.array([0, 1, 0])
         elif i == 200:
             i = 0
-            if args.test is True:
-                print("Reached: ", spot.robot.get_world_pose()[0])
-                break
+            print("Reached: ", spot.robot.get_world_pose()[0])
         # print("Pos: ", spot.robot.get_world_pose()[0])
         # print("quaternion?: ", spot.robot.get_world_pose()[1])
-        print("linear vel: ", spot.robot.get_linear_velocity())
-        print("angular vel: ", spot.robot.get_angular_velocity())
+        # print("linear vel: ", spot.robot.get_linear_velocity())
+        # print("angular vel: ", spot.robot.get_angular_velocity())
+        t_op.Set(Gf.Vec3d(1.0, 0.0, 0.1))
         i += 1
 
 # get world pos seems to return x, y, z
