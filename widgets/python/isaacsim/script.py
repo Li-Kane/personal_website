@@ -15,13 +15,18 @@
 
 from isaacsim import SimulationApp
 
-simulation_app = SimulationApp({"headless": False})
+CONFIG = {"headless": True}   # headless recommended for streaming
+simulation_app = SimulationApp(launch_config=CONFIG)
+
+from isaacsim.core.utils.extensions import enable_extension
+
+enable_extension("omni.services.livestream.webrtc")
 
 import gymnasium as gym
 from pxr import UsdGeom, Gf
-
 import carb
 import numpy as np
+
 from isaacsim.core.api import World
 from isaacsim.core.utils.prims import define_prim, set_prim_property
 from isaacsim.robot.policy.examples.robots import SpotFlatTerrainPolicy
