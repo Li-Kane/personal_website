@@ -11,9 +11,25 @@ Server::Server(int port, std::string title, std::string host) {
 
     std::cout << "Waiting for kdWidgets worker to start...\n";
     // dont return from server constructor until it is up and listening
-    while (!worker_.listening_.load()) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    // Add timeout to prevent infinite hang if port is in use
+    int timeout_ms = 5000; // 5 second timeout
+    int elapsed_ms = 0;
+    while (!worker_.listening_.load() && elapsed_ms < timeout_ms) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        elapsed_ms += 10;
     }
+    
+    if (!worker_.listening_.load()) {
+        // Clean up thread before throwing
+        if (worker_.thread_->joinable()) {
+            worker_.thread_->join();
+        }
+        throw std::runtime_error("Failed to start kdWidgets server on port " + 
+                                 std::to_string(port) + 
+                                 ". Port may already be in use.");
+    }
+    
+    std::cout << "kdWidgets worker started successfully!\n";
 }
 
 /**
@@ -96,6 +112,12 @@ void WorkerThread::runWorkerThread(int port, std::string title, std::string host
                         std::cout << "Listening on port " << port << std::endl;
                         listen_ = token;
                         listening_.store(true);
+                    } else {
+                        std::cerr << "FATAL: Failed to listen on " << host << ":" << port 
+                                  << " (port may already be in use)" << std::endl;
+                        listening_.store(false);
+                        // Signal failure by setting a negative value
+                        // The main thread can check for this
                     }
                 })
         .run();

@@ -141,21 +141,21 @@ def createEnvironment(
     north_wall = ProxyScenePart(
         "north_wall", scene=proxy_scene, geometry=wall_geom, material=khaki, layers=LAYER_ALL
     )
-    north_wall.setTranslation([size / 2.0 + thickness / 2, 0, height / 2 - thickness])
+    north_wall.setTranslation([size / 2.0 + thickness / 2 + 0.1, 0, height / 2 - thickness])
     north_wall.setUnitQuaternion(UnitQuaternion([1 / sqrt(2), 1 / sqrt(2), 0, 0]))
     south_wall = ProxyScenePart(
         "south_wall", scene=proxy_scene, geometry=wall_geom, material=khaki, layers=LAYER_ALL
     )
-    south_wall.setTranslation([-size / 2.0 - thickness / 2, 0, height / 2 - thickness])
+    south_wall.setTranslation([-size / 2.0 - thickness / 2 - 0.1, 0, height / 2 - thickness])
     south_wall.setUnitQuaternion(UnitQuaternion([-1 / sqrt(2), 1 / sqrt(2), 0, 0]))
     west_wall = ProxyScenePart(
         "west_wall", scene=proxy_scene, geometry=wall_geom, material=khaki, layers=LAYER_ALL
     )
-    west_wall.setTranslation([0, size / 2.0 + thickness / 2, height / 2 - thickness])
+    west_wall.setTranslation([0, size / 2.0 + thickness / 2 + 0.1, height / 2 - thickness])
     east_wall = ProxyScenePart(
         "east_wall", scene=proxy_scene, geometry=wall_geom, material=khaki, layers=LAYER_ALL
     )
-    east_wall.setTranslation([0, -size / 2.0 - thickness / 2, height / 2 - thickness])
+    east_wall.setTranslation([0, -size / 2.0 - thickness / 2 - 0.1, height / 2 - thickness])
 
     return left_front_wheel, left_rear_wheel, right_front_wheel, right_rear_wheel
 
@@ -296,10 +296,6 @@ class ATRVEnv(gym.Env):
 
         # collision model
         mdl = PenaltyContact("penalty_contact", self._mb, [FrameCollider(self._proxy_scene, col_scene)], hc)
-        # mdl.registerBody(left_front_wheel)
-        # mdl.registerBody(left_rear_wheel)
-        # mdl.registerBody(right_front_wheel)
-        # mdl.registerBody(right_rear_wheel)
         self._sp.registerModel(mdl)
         del mdl
 
@@ -307,7 +303,14 @@ class ATRVEnv(gym.Env):
             # check if the car is flipping over
             flip = abs(self._f2f.relTransform().getUnitQuaternion().toEulerAngles().alpha()) > 0.2
             # if more than our 4 wheels are in contact, we have a collision
-            if len(col_scene.cachedCollisions()) > 4 or flip:
+            wall_collision = False
+            for collision in col_scene.cachedCollisions():
+                part1 = col_scene.lookupPart(collision.part1).name()
+                part2 = col_scene.lookupPart(collision.part2).name()
+                if "wall" in part1 or "wall" in part2:
+                    wall_collision = True
+                    break
+            if wall_collision or flip:
                 self._terminated = True
                 return True
             return False

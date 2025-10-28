@@ -1,3 +1,4 @@
+import time
 import kdwidgets
 from env import ATRVEnv
 import gymnasium as gym
