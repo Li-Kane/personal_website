@@ -15,131 +15,31 @@
 
 from isaacsim import SimulationApp
 
-CONFIG = {"headless": False}   # headless recommended for streaming
+CONFIG = {"headless": True}   # headless recommended for streaming
 simulation_app = SimulationApp(launch_config=CONFIG)
 
-import gymnasium as gym
-from pxr import UsdGeom, Gf
-import carb
-import numpy as np
-
-from isaacsim.core.api import World
-from isaacsim.core.utils.prims import define_prim, set_prim_property
-from isaacsim.robot.policy.examples.robots import SpotFlatTerrainPolicy
+from isaacsim.core.prims import Articulation
 from isaacsim.storage.native import get_assets_root_path
+from isaacsim.core.utils.stage import add_reference_to_stage
+from isaacsim.core.api import World
 
-first_step = True
-reset_needed = False
+# Create a world (needed for physics simulation)
+world = World()
 
-# initialize robot on first step, run robot advance
-def on_physics_step(step_size) -> None:
-    global first_step
-    global reset_needed
-    if first_step:
-        spot.initialize()
-        # Print DOF / joint name ordering to help confirm mapping for Spot
-        # Open your USD and PLAY the simulation before running so the articulation is initialized
-        try:
-            names = None
-            # many wrappers expose dof_names directly on the articulation or under a .robot attribute
-            if hasattr(spot, "dof_names"):
-                names = spot.dof_names
-            elif hasattr(spot, "robot") and hasattr(spot.robot, "dof_names"):
-                names = spot.robot.dof_names
-            else:
-                # try some common accessor methods if present
-                candidate_obj = getattr(spot, "robot", spot)
-                for fn in ("get_dof_names", "get_joint_names", "joint_names", "get_actuator_names"):
-                    if hasattr(candidate_obj, fn):
-                        attr = getattr(candidate_obj, fn)
-                        names = attr() if callable(attr) else attr
-                        break
-            if names is None:
-                carb.log_info(f"Could not automatically find DOF/joint names for Spot. object dir: {dir(candidate_obj)}")
-            else:
-                # make deterministic printable list
-                try:
-                    names_list = list(names)
-                except Exception:
-                    names_list = [names]
-                carb.log_info("Spot DOF/joint order:")
-                for idx, n in enumerate(names_list):
-                    carb.log_info(f"  {idx}: {n}")
-        except Exception as e:
-            carb.log_error(f"Error while printing Spot DOF names: {e}")
-
-        first_step = False
-    elif reset_needed:
-        my_world.reset(True)
-        reset_needed = False
-        first_step = True
-    else:
-        spot.forward(step_size, base_command)
-
-
-# spawn world
-my_world = World(stage_units_in_meters=1.0, physics_dt=1 / 500, rendering_dt=1 / 50)
+# Get asset path
 assets_root_path = get_assets_root_path()
-if assets_root_path is None:
-    carb.log_error("Could not find Isaac Sim assets folder")
+usd_path = assets_root_path + "/Isaac/Robots/BostonDynamics/spot/spot.usd"
 
-# spawn warehouse scene
-prim = define_prim("/World/Ground", "Xform")
-asset_path = assets_root_path + "/Isaac/Environments/Grid/default_environment.usd"
-prim.GetReferences().AddReference(asset_path)
+# Add the robot to the stage
+prim_path = "/World/Spot"
+add_reference_to_stage(usd_path=usd_path, prim_path=prim_path)
 
-# add visual cube
-target_prim = define_prim("/World/Cube2", "Cube")
-set_prim_property("/World/Cube2", "size", 0.2)
+# Reset world to initialize physics
+world.reset()
 
-# visual properties
-gprim = UsdGeom.Gprim(target_prim)
-gprim.CreateDisplayColorAttr([Gf.Vec3f(1.0, 0.0, 0.0)])
-gprim.CreateDisplayOpacityAttr([1.0])
-
-# transform properties
-xform = UsdGeom.Xformable(target_prim)
-ops = xform.GetOrderedXformOps()
-t_op = xform.AddTranslateOp()
-
-# spawn robot
-spot = SpotFlatTerrainPolicy(
-    prim_path="/World/Spot",
-    name="Spot",
-    position=np.array([0, 0, 0.8]),
-)
-my_world.reset()
-my_world.add_physics_callback("physics_step", callback_fn=on_physics_step)
-
-# robot command
-base_command = np.zeros(3)
-
-i = 0
-while simulation_app.is_running():
-    my_world.step(render=True)
-    if my_world.is_stopped():
-        reset_needed = True
-    if my_world.is_playing():
-        if i >= 0 and i < 80:
-            # forward
-            base_command = np.array([2, 0, 0])
-        elif i >= 80 and i < 130:
-            # rotate
-            base_command = np.array([1, 0, 2])
-        elif i >= 130 and i < 200:
-            # side ways
-            base_command = np.array([0, 1, 0])
-        elif i == 200:
-            i = 0
-            print("Reached: ", spot.robot.get_world_pose()[0])
-        # print("Pos: ", spot.robot.get_world_pose()[0])
-        # print("quaternion?: ", spot.robot.get_world_pose()[1])
-        # print("linear vel: ", spot.robot.get_linear_velocity())
-        # print("angular vel: ", spot.robot.get_angular_velocity())
-        t_op.Set(Gf.Vec3d(1.0, 0.0, 0.1))
-        i += 1
-
-# get world pos seems to return x, y, z
-
+# Create articulation and get DOF names
+prim = Articulation(prim_path)
+prim.initialize()
+print(str(prim.dof_names))
 
 simulation_app.close()
