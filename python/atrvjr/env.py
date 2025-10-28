@@ -4,8 +4,8 @@ import gymnasium as gym
 from pathlib import Path
 from math import pi, sqrt
 
-from Karana.Frame.Frame_Py import FrameContainer
-from Karana.Core.KCore_Py import discard, allDestroyed
+from Karana.Frame import FrameContainer
+from Karana.Core import discard, allDestroyed
 from Karana.Dynamics.SOADyn_types import (
     MultibodyDS,
     PinSubhingeDS,
@@ -13,7 +13,7 @@ from Karana.Dynamics.SOADyn_types import (
     SphericalSubhingeDS,
     HingeDS,
 )
-from Karana.Dynamics.SOADyn_Py import (
+from Karana.Dynamics import (
     Multibody,
     HINGE_TYPE,
     StatePropagator,
@@ -22,7 +22,7 @@ from Karana.Dynamics.SOADyn_Py import (
     PhysicalHinge,
 )
 from Karana.Math import UnitQuaternion, HomTran
-from Karana.Scene.Scene_Py import (
+from Karana.Scene import (
     BoxGeometry,
     CylinderGeometry,
     Color,
@@ -34,11 +34,11 @@ from Karana.Scene.Scene_Py import (
     Texture,
     OrthographicProjection
 )
-from Karana.Scene.ProxyScene_Py import ProxyScenePart, ProxyScene
-from Karana.Scene.CoalScene_Py import CoalScene
-from Karana.Dynamics.Collision_Py import FrameCollider, PenaltyContact
-from Karana.Models.GeneralKModels_Py import UniformGravity, UpdateProxyScene, SyncRealTime
-from Karana.Math.Integrators_Py import IntegratorType
+from Karana.Scene import ProxyScenePart, ProxyScene
+from Karana.Scene import CoalScene
+from Karana.Collision import FrameCollider, HuntCrossley
+from Karana.Models import UniformGravity, UpdateProxyScene, SyncRealTime, PenaltyContact
+from Karana.Math import IntegratorType
 
 
 # helper to wrap angles
@@ -286,17 +286,20 @@ class ATRVEnv(gym.Env):
         # update proxy scene model
         self._sp.registerModel(UpdateProxyScene("update_proxy_scene", self._proxy_scene))
 
+        # Set penalty contact model parameters
+        hc = HuntCrossley("hunt_crossley_contact")
+        hc.params.kp = 100000
+        hc.params.kc = 10000
+        hc.params.mu = 0.3
+        hc.params.n = 1.5
+        hc.params.linear_region_tol = 1e-3
+
         # collision model
-        mdl = PenaltyContact("penalty_contact", FrameCollider(self._proxy_scene, col_scene))
-        mdl.registerBody(left_front_wheel)
-        mdl.registerBody(left_rear_wheel)
-        mdl.registerBody(right_front_wheel)
-        mdl.registerBody(right_rear_wheel)
-        mdl.params.kp = 100000
-        mdl.params.kc = 20000
-        mdl.params.mu = 0.3
-        mdl.params.n = 1.5
-        mdl.params.linear_region_tol = 1e-3
+        mdl = PenaltyContact("penalty_contact", self._mb, [FrameCollider(self._proxy_scene, col_scene)], hc)
+        # mdl.registerBody(left_front_wheel)
+        # mdl.registerBody(left_rear_wheel)
+        # mdl.registerBody(right_front_wheel)
+        # mdl.registerBody(right_rear_wheel)
         self._sp.registerModel(mdl)
         del mdl
 

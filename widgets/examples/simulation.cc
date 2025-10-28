@@ -106,8 +106,8 @@ kc::ks_ptr<kd::Multibody> createMbody(int n_links, kc::ks_ptr<kf::FrameContainer
     kd::PhysicalBodyParams params;
     params.spI = spI;
     params.axes = {km::Vec3(0.0, 1.0, 0.0)};
-    params.body2joint_T = b2j;
-    params.inb2joint_T = ib2j;
+    params.body_to_joint_transform = b2j;
+    params.inb_to_joint_transform = ib2j;
     params.scene_part_specs = {sp_col, sp_vis};
 
     auto vroot = std::static_pointer_cast<kd::PhysicalBody>(mb->virtualRoot());
