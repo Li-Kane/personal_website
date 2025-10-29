@@ -3,6 +3,7 @@ import numpy as np
 import gymnasium as gym
 from pathlib import Path
 from math import pi, sqrt
+import torch
 
 from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed
@@ -22,7 +23,7 @@ from Karana.Dynamics import (
     PhysicalHinge,
     Algorithms
 )
-from Karana.Math import UnitQuaternion, HomTran
+from Karana.Math import UnitQuaternion, HomTran, SpatialVector
 from Karana.Scene import (
     BoxGeometry,
     CylinderGeometry,
@@ -87,12 +88,32 @@ class SpotEnv(gym.Env):
         self.render_mode = "none"
         if render_mode and render_mode in self.metadata["render_modes"]:
             self.render_mode = render_mode
+        # out spot policy controller
+        self._policy = torch.jit.load("spot_policy.pt", map_location="cpu")
+        self._policy.eval()
 
         # initialize the simulation
         self.init_sim(port, sync_real_time)
 
         # init vars
         self._agent_pos = np.array([0.0, 0.0])
+        self._default_pos = np.array(
+            [
+                0.1,
+                -0.1,
+                0.1,
+                -0.1,
+                0.9,
+                0.9,
+                1.1,
+                1.1,
+                -1.5,
+                -1.5,
+                -1.5,
+                -1.5,
+            ]
+        )
+        self._prev_action = np.zeros(12)
 
     def init_sim(self, port: int = 0, sync_real_time: bool = False):
         # setup bodies and scene
@@ -139,6 +160,8 @@ class SpotEnv(gym.Env):
         self._sp = StatePropagator(self._mb, integrator_type=IntegratorType.RK4)
         sp_opts = self._sp.getOptions()
 
+        self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
+
         # for visualization
         if sync_real_time:
             self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
@@ -151,17 +174,30 @@ class SpotEnv(gym.Env):
         if self.np_random is None:
             self.np_random, _ = gym.utils.seeding.np_random(seed)
         self._agent_pos = np.random.uniform(-10.0, 10.0, size=(2,))
-        
-        # print(self._fl_uleg.subhingeType())
-        # self._fl_uleg.setQ(pi)
-        # self._hl_hip.setQ(pi)
+
+        # move base to random position
         self._root_hinge.fitQ(
             HomTran(vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
         )
 
+        # set to default position:
+        self._fl_hip.setQ(0.1)
+        self._fr_hip.setQ(-0.1)
+        self._hl_hip.setQ(0.1)
+        self._hr_hip.setQ(-0.1)
+        self._fl_uleg.setQ(0.9)
+        self._fr_uleg.setQ(0.9)
+        self._hl_uleg.setQ(1.1)
+        self._hr_uleg.setQ(1.1)
+        self._fl_lleg.setQ(-1.5)
+        self._fr_lleg.setQ(-1.5)
+        self._hl_lleg.setQ(-1.5)
+        self._hr_lleg.setQ(-1.5)
+
         # simulation
         t_init = np.timedelta64(0, "ns")
         self._sp.setState(t_init, self._mb.dynamicsToState())
+        self._proxy_scene.update()
 
         # setup timed event (every 0.01s)
         h = np.timedelta64(int(1e7), "ns")
@@ -173,14 +209,76 @@ class SpotEnv(gym.Env):
     # def action_to_subhinges(self, action: np.ndarray):
     #     self._fl_hx.sol(action[0])
 
-    def get_observation(self):
-        # base linear velocity
-        
+    def get_observation(self, action: np.ndarray):
+        sp_vel = self._f2f.relSpVel().toVector6()
+        obs = np.zeros(48)
+        # 3 base_lin_vel
+        obs[:3] = sp_vel[3:6]
+        # 3 base_ang_vel
+        obs[3:6] = sp_vel[0:3]
+        # 3 gravity
+        obs[6:9] = [0.0, 0.0, -9.81]
+        # 3 command
+        obs[9:12] = action
+        # 12 joint offset (current_joint_pos - default_pos)
+        obs[12] = self._fl_hip.getQ() - self._default_pos[0]
+        obs[13] = self._fr_hip.getQ() - self._default_pos[1]
+        obs[14] = self._hl_hip.getQ() - self._default_pos[2]
+        obs[15] = self._hr_hip.getQ() - self._default_pos[3]
+        obs[16] = self._fl_uleg.getQ() - self._default_pos[4]
+        obs[17] = self._fr_uleg.getQ() - self._default_pos[5]
+        obs[18] = self._hl_uleg.getQ() - self._default_pos[6]
+        obs[19] = self._hr_uleg.getQ() - self._default_pos[7]
+        obs[20] = self._fl_lleg.getQ() - self._default_pos[8]
+        obs[21] = self._fr_lleg.getQ() - self._default_pos[9]
+        obs[22] = self._hl_lleg.getQ() - self._default_pos[10]
+        obs[23] = self._hr_lleg.getQ() - self._default_pos[11]
+        # 12 joint velocities
+        obs[24] = self._fl_hip.getU()
+        obs[25] = self._fr_hip.getU()
+        obs[26] = self._hl_hip.getU()
+        obs[27] = self._hr_hip.getU()
+        obs[28] = self._fl_uleg.getU()
+        obs[29] = self._fr_uleg.getU()
+        obs[30] = self._hl_uleg.getU()
+        obs[31] = self._hr_uleg.getU()
+        obs[32] = self._fl_lleg.getU()
+        obs[33] = self._fr_lleg.getU()
+        obs[34] = self._hl_lleg.getU()
+        obs[35] = self._hr_lleg.getU()
+        # 12 previous action (the raw policy output)
+        obs[36:48] = self._prev_action
         # return zero observation for now
-        return np.zeros(0)
+        return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
-    def step(self):
-        self._sp.advanceBy(10.0)
+    def step(self, action: np.ndarray):
+        action_scale = 0.2
+
+        observation = self.get_observation(action)
+        with torch.no_grad():
+            policy_action = self._policy(observation)  # -> (1, 12)
+        policy_action = policy_action.squeeze(0).cpu().numpy()
+        self._prev_action = policy_action
+
+        # apply action to joints
+        action = policy_action * action_scale
+        self._fl_hip.setQ(self._default_pos[0] + action[0])
+        self._fr_hip.setQ(self._default_pos[1] + action[1])
+        self._hl_hip.setQ(self._default_pos[2] + action[2])
+        self._hr_hip.setQ(self._default_pos[3] + action[3])
+        self._fl_uleg.setQ(self._default_pos[4] + action[4])
+        self._fr_uleg.setQ(self._default_pos[5] + action[5])
+        self._hl_uleg.setQ(self._default_pos[6] + action[6])
+        self._hr_uleg.setQ(self._default_pos[7] + action[7])
+        self._fl_lleg.setQ(self._default_pos[8] + action[8])
+        self._fr_lleg.setQ(self._default_pos[9] + action[9])
+        self._hl_lleg.setQ(self._default_pos[10] + action[10])
+        self._hr_lleg.setQ(self._default_pos[11] + action[11])
+        self._sp.setState(
+            self._sp.getTime(),
+            self._mb.dynamicsToState(),
+        )
+        self._sp.advanceBy(0.02)
 
     def close(self):
         del self._proxy_scene, self._target

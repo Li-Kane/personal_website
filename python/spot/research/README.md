@@ -17,6 +17,9 @@ Observations (48):
 Actions (12):
 default_pos + (action * action_scale)
 
+default_pos:
+[0.1, -0.1, 0.1, -0.1, 0.9, 0.9, 1.1, 1.1, -1.5, -1.5, -1.5, -1.5]
+
 
 My Robot:
 { 'body-Linear3Subhinge0': [array([0., 0., 0.]), array([0., 0., 0.]), array([0., 0., 0.]), array([0., 0., 0.])],

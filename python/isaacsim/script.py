@@ -18,10 +18,6 @@ from isaacsim import SimulationApp
 CONFIG = {"headless": True}   # headless recommended for streaming
 simulation_app = SimulationApp(launch_config=CONFIG)
 
-from isaacsim.core.utils.extensions import enable_extension
-
-enable_extension("omni.services.livestream.webrtc")
-
 import gymnasium as gym
 from pxr import UsdGeom, Gf
 import carb
@@ -42,6 +38,7 @@ def on_physics_step(step_size) -> None:
     if first_step:
         spot.initialize()
         first_step = False
+        print(spot.default_pos)
     elif reset_needed:
         my_world.reset(True)
         reset_needed = False
