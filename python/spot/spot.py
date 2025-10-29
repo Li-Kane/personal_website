@@ -4,6 +4,7 @@ import gymnasium as gym
 from pathlib import Path
 from math import pi, sqrt
 import torch
+from collections import deque
 
 from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed
@@ -55,6 +56,19 @@ def createMbody(fc: FrameContainer) -> Multibody:
         ],
     )
 
+    # iterate through all bodies and make them visual (except for lleg)
+    my_deque = deque()
+    my_deque.append(multibody_info.base_bodies[0])
+    while my_deque:
+        current = my_deque.popleft()
+        if "lleg" in current.body.name:
+            continue
+        for visual in current.body.visuals:
+            visual.layers = LAYER_GRAPHICS
+        for child in current.children:
+            my_deque.append(child)
+
+    # convert to multibody
     multibody = multibody_info.toMultibody(fc)
     multibody.ensureCurrent()
     multibody.resetData()
@@ -72,7 +86,7 @@ def createEnvironment(
     ground = ProxyScenePart(
         "ground", scene=proxy_scene, geometry=ground_geom, material=coral, layers=LAYER_ALL
     )
-    ground.setTranslation([0, 0, -0.815])
+    ground.setTranslation([0, 0, -0.625])
 
 
 class SpotEnv(gym.Env):
@@ -166,8 +180,33 @@ class SpotEnv(gym.Env):
         if sync_real_time:
             self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
 
+        # gravity model
+        ug = UniformGravity("grav_model", self._mb)
+        ug.params.g = np.array([0, 0, -9.81])
+        self._sp.registerModel(ug)
+        del ug
+
         # update proxy scene model
         self._sp.registerModel(UpdateProxyScene("update_proxy_scene", self._proxy_scene))
+
+        # Set penalty contact model parameters
+        hc = HuntCrossley("hunt_crossley_contact")
+        hc.params.kp = 100000
+        hc.params.kc = 10000
+        hc.params.mu = 0.3
+        hc.params.n = 1.5
+        hc.params.linear_region_tol = 1e-3
+
+        # collision model
+        mdl = PenaltyContact("penalty_contact", self._mb, [FrameCollider(self._proxy_scene, col_scene)], hc)
+        self._sp.registerModel(mdl)
+        del mdl
+
+        def compensate_gravity(t, x):
+            torques = Algorithms.evalGravityCompensation(self._mb)
+            self._mb.setT(torques)
+
+        sp_opts.fns.pre_deriv_fns["compensate_gravity"] = compensate_gravity
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
@@ -199,8 +238,8 @@ class SpotEnv(gym.Env):
         self._sp.setState(t_init, self._mb.dynamicsToState())
         self._proxy_scene.update()
 
-        # setup timed event (every 0.01s)
-        h = np.timedelta64(int(1e7), "ns")
+        # setup timed event (every 0.002s)
+        h = np.timedelta64(int(2e6), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
         self._sp.registerTimedEvent(t)
@@ -248,7 +287,6 @@ class SpotEnv(gym.Env):
         obs[35] = self._hr_lleg.getU()
         # 12 previous action (the raw policy output)
         obs[36:48] = self._prev_action
-        # return zero observation for now
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
     def step(self, action: np.ndarray):
@@ -274,10 +312,6 @@ class SpotEnv(gym.Env):
         self._fr_lleg.setQ(self._default_pos[9] + action[9])
         self._hl_lleg.setQ(self._default_pos[10] + action[10])
         self._hr_lleg.setQ(self._default_pos[11] + action[11])
-        self._sp.setState(
-            self._sp.getTime(),
-            self._mb.dynamicsToState(),
-        )
         self._sp.advanceBy(0.02)
 
     def close(self):
