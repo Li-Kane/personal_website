@@ -162,7 +162,7 @@ class SpotEnv(gym.Env):
         self._f2f = cast(PhysicalBody, self._mb.virtualRoot()).frame2Frame(
             self._body
         )
-        self._root_hinge = cast(PhysicalHinge, self._mb.getBody("body").parentHinge())
+        self._root_hinge = cast(PhysicalHinge, self._body.parentHinge())
 
         # setup graphics if enabled
         if self.render_mode == "human":
@@ -203,9 +203,9 @@ class SpotEnv(gym.Env):
         hc = HuntCrossley("hunt_crossley_contact")
         hc.params.kp = 1.453e5
         hc.params.kc = 0
-        hc.params.mu = 1.5
+        hc.params.mu = 1.0
         hc.params.n = 1.5
-        hc.params.linear_region_tol = 0
+        hc.params.linear_region_tol = 1e-20
 
         # collision model
         mdl = PenaltyContact("penalty_contact", self._mb, [FrameCollider(self._proxy_scene, col_scene)], hc)
@@ -329,12 +329,12 @@ class SpotEnv(gym.Env):
 
         observation = self.get_observation(action)
         with torch.no_grad():
-            policy_action = self._policy(observation)  # -> (1, 12)
-        policy_action = policy_action.squeeze(0).cpu().numpy()
-        self._prev_action = policy_action
+            action = self._policy(observation)  # -> (1, 12)
+        action = action.squeeze(0).cpu().numpy()
+        self._prev_action = action.copy()
 
         # apply action to joints
-        action = policy_action * action_scale
+        action = action * action_scale
         self._fl_hip_des = self._default_pos[0] + action[0]
         self._fr_hip_des = self._default_pos[1] + action[1]
         self._hl_hip_des = self._default_pos[2] + action[2]
@@ -350,7 +350,7 @@ class SpotEnv(gym.Env):
         self._sp.advanceBy(0.02)
 
     def close(self):
-        del self._proxy_scene, self._target
+        del self._proxy_scene
         discard(self._sp)
         if self.render_mode == "human":
             self._cleanup_graphics()
