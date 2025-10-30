@@ -1,12 +1,10 @@
-# from spot import SpotEnv
-from pole import TwoLinkCartPoleEnv
+from spot import SpotEnv
 import gymnasium as gym
 import numpy as np
 
 def main():
     # setup simulation
-    # env = SpotEnv(port=3247, render_mode="human", sync_real_time=True)
-    env = TwoLinkCartPoleEnv(port=3247, render_mode="human", sync_real_time=True)
+    env = SpotEnv(port=3247, render_mode="human", sync_real_time=True)
     # if they press enter, reset the environment, q to quit
     while True:
         str_input = input("Press Enter to reset the environment, or 'q' to quit: ")

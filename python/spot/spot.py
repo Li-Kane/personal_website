@@ -18,6 +18,7 @@ from Karana.Dynamics.SOADyn_types import (
 from Karana.Dynamics import (
     Multibody,
     HINGE_TYPE,
+    PinSubhinge,
     StatePropagator,
     TimedEvent,
     PhysicalBody,
@@ -43,6 +44,14 @@ from Karana.Collision import FrameCollider, HuntCrossley
 from Karana.Models import UniformGravity, UpdateProxyScene, SyncRealTime, PenaltyContact
 from Karana.Math import IntegratorType
 
+def calculate_torque(current_pos: float, desired_pos: float, current_vel: float, max_effort: float = 45.0) -> float:
+    # stiffness kp = 60.0
+    # damping kd = 1.5
+    return np.clip(
+        60.0 * (desired_pos - current_pos) - 1.5 * current_vel,
+        -max_effort,
+        max_effort,
+    )
 
 def createMbody(fc: FrameContainer) -> Multibody:
     urdf_file = Path().absolute() / "assets" / "spot_simple.urdf"
@@ -86,7 +95,7 @@ def createEnvironment(
     ground = ProxyScenePart(
         "ground", scene=proxy_scene, geometry=ground_geom, material=coral, layers=LAYER_ALL
     )
-    ground.setTranslation([0, 0, -0.625])
+    ground.setTranslation([0, 0, -0.64])
 
 
 class SpotEnv(gym.Env):
@@ -135,28 +144,29 @@ class SpotEnv(gym.Env):
         self._mb = createMbody(self._fc)
 
         # obtain all the necessary joints
-        self._fl_hip = cast(PhysicalHinge, self._mb.getBody("fl_hip").parentHinge()).subhinge(0)
-        self._fr_hip = cast(PhysicalHinge, self._mb.getBody("fr_hip").parentHinge()).subhinge(0)
-        self._hl_hip = cast(PhysicalHinge, self._mb.getBody("hl_hip").parentHinge()).subhinge(0)
-        self._hr_hip = cast(PhysicalHinge, self._mb.getBody("hr_hip").parentHinge()).subhinge(0)
-        self._fl_uleg = cast(PhysicalHinge, self._mb.getBody("fl_uleg").parentHinge()).subhinge(0)
-        self._fr_uleg = cast(PhysicalHinge, self._mb.getBody("fr_uleg").parentHinge()).subhinge(0)
-        self._hl_uleg = cast(PhysicalHinge, self._mb.getBody("hl_uleg").parentHinge()).subhinge(0)
-        self._hr_uleg = cast(PhysicalHinge, self._mb.getBody("hr_uleg").parentHinge()).subhinge(0)
-        self._fl_lleg = cast(PhysicalHinge, self._mb.getBody("fl_lleg").parentHinge()).subhinge(0)
-        self._fr_lleg = cast(PhysicalHinge, self._mb.getBody("fr_lleg").parentHinge()).subhinge(0)
-        self._hl_lleg = cast(PhysicalHinge, self._mb.getBody("hl_lleg").parentHinge()).subhinge(0)
-        self._hr_lleg = cast(PhysicalHinge, self._mb.getBody("hr_lleg").parentHinge()).subhinge(0)
+        self._fl_hip = cast(PinSubhinge, self._mb.getBody("fl_hip").parentHinge().subhinge(0))
+        self._fr_hip = cast(PinSubhinge, self._mb.getBody("fr_hip").parentHinge().subhinge(0))
+        self._hl_hip = cast(PinSubhinge, self._mb.getBody("hl_hip").parentHinge().subhinge(0))
+        self._hr_hip = cast(PinSubhinge, self._mb.getBody("hr_hip").parentHinge().subhinge(0))
+        self._fl_uleg = cast(PinSubhinge, self._mb.getBody("fl_uleg").parentHinge().subhinge(0))
+        self._fr_uleg = cast(PinSubhinge, self._mb.getBody("fr_uleg").parentHinge().subhinge(0))
+        self._hl_uleg = cast(PinSubhinge, self._mb.getBody("hl_uleg").parentHinge().subhinge(0))
+        self._hr_uleg = cast(PinSubhinge, self._mb.getBody("hr_uleg").parentHinge().subhinge(0))
+        self._fl_lleg = cast(PinSubhinge, self._mb.getBody("fl_lleg").parentHinge().subhinge(0))
+        self._fr_lleg = cast(PinSubhinge, self._mb.getBody("fr_lleg").parentHinge().subhinge(0))
+        self._hl_lleg = cast(PinSubhinge, self._mb.getBody("hl_lleg").parentHinge().subhinge(0))
+        self._hr_lleg = cast(PinSubhinge, self._mb.getBody("hr_lleg").parentHinge().subhinge(0))
 
         # attach a frame2frame to the spot base
+        self._body = cast(PhysicalBody, self._mb.getBody("body"))
         self._f2f = cast(PhysicalBody, self._mb.virtualRoot()).frame2Frame(
-            self._mb.getBody("body")
+            self._body
         )
         self._root_hinge = cast(PhysicalHinge, self._mb.getBody("body").parentHinge())
 
         # setup graphics if enabled
         if self.render_mode == "human":
-            self._cleanup_graphics, viz_scene = self._mb.setupGraphics(axes=0.5, port=port, local_client='never')
+            self._cleanup_graphics, viz_scene = self._mb.setupGraphics(port=port, local_client='never')
             self._proxy_scene = self._mb.getScene()
         else:
             self._proxy_scene = ProxyScene(f"{self._mb.name()}_proxyscene", self._mb.virtualRoot())
@@ -191,22 +201,32 @@ class SpotEnv(gym.Env):
 
         # Set penalty contact model parameters
         hc = HuntCrossley("hunt_crossley_contact")
-        hc.params.kp = 100000
-        hc.params.kc = 10000
-        hc.params.mu = 0.3
+        hc.params.kp = 1.453e5
+        hc.params.kc = 0
+        hc.params.mu = 1.5
         hc.params.n = 1.5
-        hc.params.linear_region_tol = 1e-3
+        hc.params.linear_region_tol = 0
 
         # collision model
         mdl = PenaltyContact("penalty_contact", self._mb, [FrameCollider(self._proxy_scene, col_scene)], hc)
         self._sp.registerModel(mdl)
         del mdl
 
-        def compensate_gravity(t, x):
-            torques = Algorithms.evalGravityCompensation(self._mb)
-            self._mb.setT(torques)
-
-        sp_opts.fns.pre_deriv_fns["compensate_gravity"] = compensate_gravity
+        # define the apply forces function
+        def apply_forces(t, x):
+            self._fl_hip.setT(calculate_torque(self._fl_hip.getQ(), self._fl_hip_des, self._fl_hip.getU()))
+            self._fr_hip.setT(calculate_torque(self._fr_hip.getQ(), self._fr_hip_des, self._fr_hip.getU()))
+            self._hl_hip.setT(calculate_torque(self._hl_hip.getQ(), self._hl_hip_des, self._hl_hip.getU()))
+            self._hr_hip.setT(calculate_torque(self._hr_hip.getQ(), self._hr_hip_des, self._hr_hip.getU()))
+            self._fl_uleg.setT(calculate_torque(self._fl_uleg.getQ(), self._fl_uleg_des, self._fl_uleg.getU()))
+            self._fr_uleg.setT(calculate_torque(self._fr_uleg.getQ(), self._fr_uleg_des, self._fr_uleg.getU()))
+            self._hl_uleg.setT(calculate_torque(self._hl_uleg.getQ(), self._hl_uleg_des, self._hl_uleg.getU()))
+            self._hr_uleg.setT(calculate_torque(self._hr_uleg.getQ(), self._hr_uleg_des, self._hr_uleg.getU()))
+            self._fl_lleg.setT(calculate_torque(self._fl_lleg.getQ(), self._fl_lleg_des, self._fl_lleg.getU(), 115.0))
+            self._fr_lleg.setT(calculate_torque(self._fr_lleg.getQ(), self._fr_lleg_des, self._fr_lleg.getU(), 115.0))
+            self._hl_lleg.setT(calculate_torque(self._hl_lleg.getQ(), self._hl_lleg_des, self._hl_lleg.getU(), 115.0))
+            self._hr_lleg.setT(calculate_torque(self._hr_lleg.getQ(), self._hr_lleg_des, self._hr_lleg.getU(), 115.0))
+        sp_opts.fns.pre_deriv_fns["apply_forces"] = apply_forces
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
@@ -219,19 +239,33 @@ class SpotEnv(gym.Env):
             HomTran(vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
         )
 
+        # set desired position variables
+        self._fl_hip_des = 0.1
+        self._fr_hip_des = -0.1
+        self._hl_hip_des = 0.1
+        self._hr_hip_des = -0.1
+        self._fl_uleg_des = 0.9
+        self._fr_uleg_des = 0.9
+        self._hl_uleg_des = 1.1
+        self._hr_uleg_des = 1.1
+        self._fl_lleg_des = -1.5
+        self._fr_lleg_des = -1.5
+        self._hl_lleg_des = -1.5
+        self._hr_lleg_des = -1.5
+
         # set to default position:
-        self._fl_hip.setQ(0.1)
-        self._fr_hip.setQ(-0.1)
-        self._hl_hip.setQ(0.1)
-        self._hr_hip.setQ(-0.1)
-        self._fl_uleg.setQ(0.9)
-        self._fr_uleg.setQ(0.9)
-        self._hl_uleg.setQ(1.1)
-        self._hr_uleg.setQ(1.1)
-        self._fl_lleg.setQ(-1.5)
-        self._fr_lleg.setQ(-1.5)
-        self._hl_lleg.setQ(-1.5)
-        self._hr_lleg.setQ(-1.5)
+        self._fl_hip.setQ(self._fl_hip_des)
+        self._fr_hip.setQ(self._fr_hip_des)
+        self._hl_hip.setQ(self._hl_hip_des)
+        self._hr_hip.setQ(self._hr_hip_des)
+        self._fl_uleg.setQ(self._fl_uleg_des)
+        self._fr_uleg.setQ(self._fr_uleg_des)
+        self._hl_uleg.setQ(self._hl_uleg_des)
+        self._hr_uleg.setQ(self._hr_uleg_des)
+        self._fl_lleg.setQ(self._fl_lleg_des)
+        self._fr_lleg.setQ(self._fr_lleg_des)
+        self._hl_lleg.setQ(self._hl_lleg_des)
+        self._hr_lleg.setQ(self._hr_lleg_des)
 
         # simulation
         t_init = np.timedelta64(0, "ns")
@@ -245,10 +279,10 @@ class SpotEnv(gym.Env):
         self._sp.registerTimedEvent(t)
         del t
 
-    # def action_to_subhinges(self, action: np.ndarray):
-    #     self._fl_hx.sol(action[0])
+        self._sp.advanceBy(0.001)
 
     def get_observation(self, action: np.ndarray):
+        # convert to body frames and use projected gravity
         sp_vel = self._f2f.relSpVel().toVector6()
         obs = np.zeros(48)
         # 3 base_lin_vel
@@ -256,7 +290,8 @@ class SpotEnv(gym.Env):
         # 3 base_ang_vel
         obs[3:6] = sp_vel[0:3]
         # 3 gravity
-        obs[6:9] = [0.0, 0.0, -9.81]
+        proj_gravity = self._body.getGravAccel()
+        obs[6:9] = proj_gravity / np.linalg.norm(proj_gravity)
         # 3 command
         obs[9:12] = action
         # 12 joint offset (current_joint_pos - default_pos)
@@ -300,18 +335,18 @@ class SpotEnv(gym.Env):
 
         # apply action to joints
         action = policy_action * action_scale
-        self._fl_hip.setQ(self._default_pos[0] + action[0])
-        self._fr_hip.setQ(self._default_pos[1] + action[1])
-        self._hl_hip.setQ(self._default_pos[2] + action[2])
-        self._hr_hip.setQ(self._default_pos[3] + action[3])
-        self._fl_uleg.setQ(self._default_pos[4] + action[4])
-        self._fr_uleg.setQ(self._default_pos[5] + action[5])
-        self._hl_uleg.setQ(self._default_pos[6] + action[6])
-        self._hr_uleg.setQ(self._default_pos[7] + action[7])
-        self._fl_lleg.setQ(self._default_pos[8] + action[8])
-        self._fr_lleg.setQ(self._default_pos[9] + action[9])
-        self._hl_lleg.setQ(self._default_pos[10] + action[10])
-        self._hr_lleg.setQ(self._default_pos[11] + action[11])
+        self._fl_hip_des = self._default_pos[0] + action[0]
+        self._fr_hip_des = self._default_pos[1] + action[1]
+        self._hl_hip_des = self._default_pos[2] + action[2]
+        self._hr_hip_des = self._default_pos[3] + action[3]
+        self._fl_uleg_des = self._default_pos[4] + action[4]
+        self._fr_uleg_des = self._default_pos[5] + action[5]
+        self._hl_uleg_des = self._default_pos[6] + action[6]
+        self._hr_uleg_des = self._default_pos[7] + action[7]
+        self._fl_lleg_des = self._default_pos[8] + action[8]
+        self._fr_lleg_des = self._default_pos[9] + action[9]
+        self._hl_lleg_des = self._default_pos[10] + action[10]
+        self._hr_lleg_des = self._default_pos[11] + action[11]
         self._sp.advanceBy(0.02)
 
     def close(self):
