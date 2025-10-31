@@ -48,7 +48,7 @@ def calculate_torque(current_pos: float, desired_pos: float, current_vel: float,
     # stiffness kp = 60.0
     # damping kd = 1.5
     return np.clip(
-        60.0 * (desired_pos - current_pos) - 1.5 * current_vel,
+        80.0 * (desired_pos - current_pos) - 1.5 * current_vel,
         -max_effort,
         max_effort,
     )
