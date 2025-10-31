@@ -23,9 +23,9 @@ def main():
             elif action_input.lower() == 's':
                 action = np.array([-1.0, 0.0, 0.0])
             elif action_input.lower() == 'a':
-                action = np.array([0.0, 0.0, 1.0])
+                action = np.array([0.0, 0.0, 0.5])
             elif action_input.lower() == 'd':
-                action = np.array([0.0, 0.0, -1.0])
+                action = np.array([0.0, 0.0, -0.5])
             env.step(action)
             # obs, reward, terminated, truncated, info = env.step()
             # print("terminated:", terminated, "truncated:", truncated)

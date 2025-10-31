@@ -95,7 +95,7 @@ def createEnvironment(
     ground = ProxyScenePart(
         "ground", scene=proxy_scene, geometry=ground_geom, material=coral, layers=LAYER_ALL
     )
-    ground.setTranslation([0, 0, -0.64])
+    ground.setTranslation([0, 0, -0.65])
 
 
 class SpotEnv(gym.Env):
@@ -167,6 +167,9 @@ class SpotEnv(gym.Env):
         # setup graphics if enabled
         if self.render_mode == "human":
             self._cleanup_graphics, viz_scene = self._mb.setupGraphics(port=port, local_client='never')
+            viz_scene.defaultCamera().pointCameraAt(
+                [0.0, 3.0, 1.5], [0, 0, 0,], [0, 0, 1],
+            )
             self._proxy_scene = self._mb.getScene()
         else:
             self._proxy_scene = ProxyScene(f"{self._mb.name()}_proxyscene", self._mb.virtualRoot())
@@ -201,9 +204,9 @@ class SpotEnv(gym.Env):
 
         # Set penalty contact model parameters
         hc = HuntCrossley("hunt_crossley_contact")
-        hc.params.kp = 1.453e5
-        hc.params.kc = 0
-        hc.params.mu = 1.0
+        hc.params.kp = 1e8
+        hc.params.kc = 5e6
+        hc.params.mu = 1.1
         hc.params.n = 1.5
         hc.params.linear_region_tol = 1e-20
 
@@ -235,9 +238,9 @@ class SpotEnv(gym.Env):
         self._agent_pos = np.random.uniform(-10.0, 10.0, size=(2,))
 
         # move base to random position
-        self._root_hinge.fitQ(
-            HomTran(vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
-        )
+        # self._root_hinge.fitQ(
+        #     HomTran(vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
+        # )
 
         # set desired position variables
         self._fl_hip_des = 0.1
@@ -272,8 +275,8 @@ class SpotEnv(gym.Env):
         self._sp.setState(t_init, self._mb.dynamicsToState())
         self._proxy_scene.update()
 
-        # setup timed event (every 0.002s)
-        h = np.timedelta64(int(2e6), "ns")
+        # setup timed event (every 0.5 ms)
+        h = np.timedelta64(int(1e5), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
         self._sp.registerTimedEvent(t)
