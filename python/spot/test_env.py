@@ -27,8 +27,6 @@ def main():
             elif action_input.lower() == 'd':
                 action = np.array([0.0, 0.0, -0.5])
             env.step(action)
-            # obs, reward, terminated, truncated, info = env.step()
-            # print("terminated:", terminated, "truncated:", truncated)
 
 if __name__ == "__main__":
     main()

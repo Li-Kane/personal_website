@@ -5,6 +5,7 @@ from pathlib import Path
 from math import pi, sqrt
 import torch
 from collections import deque
+import time
 
 from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed
@@ -48,13 +49,13 @@ def calculate_torque(current_pos: float, desired_pos: float, current_vel: float,
     # stiffness kp = 60.0
     # damping kd = 1.5
     return np.clip(
-        60.0 * (desired_pos - current_pos) - 1.5 * current_vel,
+        80.0 * (desired_pos - current_pos) - 1.5 * current_vel,
         -max_effort,
         max_effort,
     )
 
 def createMbody(fc: FrameContainer) -> Multibody:
-    urdf_file = Path().absolute() / "assets" / "spot_simple.urdf"
+    urdf_file = Path().absolute() / "assets" / "spot_simpler.urdf"
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
     # convert to full6DOF hinge between root frame and spot base
     multibody_info.base_bodies[0].body.hinge = HingeDS(
@@ -175,7 +176,7 @@ class SpotEnv(gym.Env):
             self._proxy_scene = ProxyScene(f"{self._mb.name()}_proxyscene", self._mb.virtualRoot())
 
         # create the environment
-        createEnvironment(50, self._proxy_scene)
+        createEnvironment(100, self._proxy_scene)
 
         # setup collision client
         col_scene = CoalScene("collision_scene")
@@ -241,6 +242,12 @@ class SpotEnv(gym.Env):
         # self._root_hinge.fitQ(
         #     HomTran(vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
         # )
+
+        # timing metrics
+        self._step_times = []
+        self._observation_times = []
+        self._advance_times = []
+        self._step_count = 0
 
         # set desired position variables
         self._fl_hip_des = 0.1
@@ -328,13 +335,17 @@ class SpotEnv(gym.Env):
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
     def step(self, action: np.ndarray):
+        step_start = time.perf_counter()
         action_scale = 0.2
 
+        # Time observation gathering
+        obs_start = time.perf_counter()
         observation = self.get_observation(action)
         with torch.no_grad():
             action = self._policy(observation)  # -> (1, 12)
         action = action.squeeze(0).cpu().numpy()
         self._prev_action = action.copy()
+        obs_time = time.perf_counter() - obs_start
 
         # apply action to joints
         action = action * action_scale
@@ -350,7 +361,20 @@ class SpotEnv(gym.Env):
         self._fr_lleg_des = self._default_pos[9] + action[9]
         self._hl_lleg_des = self._default_pos[10] + action[10]
         self._hr_lleg_des = self._default_pos[11] + action[11]
+        
+        # Time advanceBy
+        advance_start = time.perf_counter()
         self._sp.advanceBy(0.02)
+        advance_time = time.perf_counter() - advance_start
+        
+        # Calculate total step time
+        step_time = time.perf_counter() - step_start
+        
+        # Store timing metrics
+        self._step_count += 1
+        self._step_times.append(step_time)
+        self._observation_times.append(obs_time)
+        self._advance_times.append(advance_time)
 
     def close(self):
         del self._proxy_scene
