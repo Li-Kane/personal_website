@@ -48,7 +48,7 @@ def calculate_torque(current_pos: float, desired_pos: float, current_vel: float,
     # stiffness kp = 60.0
     # damping kd = 1.5
     return np.clip(
-        80.0 * (desired_pos - current_pos) - 1.5 * current_vel,
+        60.0 * (desired_pos - current_pos) - 1.5 * current_vel,
         -max_effort,
         max_effort,
     )
@@ -276,7 +276,7 @@ class SpotEnv(gym.Env):
         self._proxy_scene.update()
 
         # setup timed event (every 0.5 ms)
-        h = np.timedelta64(int(1e5), "ns")
+        h = np.timedelta64(int(2e5), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
         self._sp.registerTimedEvent(t)
