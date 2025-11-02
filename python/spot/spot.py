@@ -1,9 +1,7 @@
 from typing import Optional, cast
 import numpy as np
 import gymnasium as gym
-from pathlib import Path
 import torch
-from collections import deque
 import time
 
 from helpers import (
@@ -14,31 +12,16 @@ from helpers import (
 )
 from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed
-from Karana.Dynamics.SOADyn_types import (
-    MultibodyDS,
-    Linear3SubhingeDS,
-    SphericalSubhingeDS,
-    HingeDS,
-)
 from Karana.Dynamics import (
-    Multibody,
-    HINGE_TYPE,
-    PinSubhinge,
     StatePropagator,
     TimedEvent,
     PhysicalBody,
     PhysicalHinge,
 )
 from Karana.Scene import (
-    BoxGeometry,
-    Color,
-    PhysicalMaterialInfo,
-    PhysicalMaterial,
-    LAYER_GRAPHICS,
-    LAYER_ALL,
     LAYER_COLLISION,
 )
-from Karana.Scene import ProxyScenePart, ProxyScene
+from Karana.Scene import ProxyScene
 from Karana.Scene import CoalScene
 from Karana.Collision import FrameCollider, HuntCrossley
 from Karana.Models import UniformGravity, UpdateProxyScene, SyncRealTime, PenaltyContact
@@ -177,7 +160,6 @@ class SpotEnv(gym.Env):
         self._advance_times = []
         self._step_count = 0
         self._af_time_ns = 0
-        self._af_calls = 0
         self._af_per_step = []
 
         self._desired_pos = self._default_pos
@@ -231,13 +213,13 @@ class SpotEnv(gym.Env):
         obs_start = time.perf_counter()
         observation = self.get_observation(action)
         with torch.inference_mode():
-            action = self._policy(observation)  # -> (1, 12)
-        action = action.squeeze(0).cpu().numpy()
-        self._prev_action = action.copy()
+            policy_action = self._policy(observation)  # -> (1, 12)
+        policy_action = policy_action.squeeze(0).cpu().numpy()
+        self._prev_action = policy_action
         obs_time = time.perf_counter() - obs_start
 
         # apply action to joints
-        action = policy_to_urdf(action * action_scale)
+        action = policy_to_urdf(policy_action * action_scale)
         Q = self._coorddata.getQ()
         Q[6:] = self._default_pos + action
         self._desired_pos = self._default_pos + action

@@ -26,6 +26,8 @@ def main():
                 action = np.array([0.0, 0.0, 0.5])
             elif action_input.lower() == 'd':
                 action = np.array([0.0, 0.0, -0.5])
+            elif action_input.lower() == "p":
+                action = np.array([0.0, 0.0, 0.0])
             env.step(action)
 
 if __name__ == "__main__":
