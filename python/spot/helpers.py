@@ -49,10 +49,22 @@ def createMbody(fc: FrameContainer) -> Multibody:
     )
 
     # iterate through all bodies and make them visual (except for lleg)
+    # also add colors
+    mat_info = PhysicalMaterialInfo()
     my_deque = deque()
     my_deque.append(multibody_info.base_bodies[0])
     while my_deque:
         current = my_deque.popleft()
+        if "hip" in current.body.name or "lleg" in current.body.name:
+            mat_info.color = Color.fromRGB(0.1, 0.1, 0.1)
+            mat_info.roughness = 0.8
+            for visual in current.body.visuals:
+                visual.material = PhysicalMaterial(mat_info)
+        else:
+            mat_info.color = Color.fromRGB(1, 0.8431, 0)
+            mat_info.roughness = 0.4
+            for visual in current.body.visuals:
+                visual.material = PhysicalMaterial(mat_info)
         if "lleg" in current.body.name:
             continue
         for visual in current.body.visuals:
@@ -72,7 +84,7 @@ def createEnvironment(
     size: int, proxy_scene: ProxyScene
 ):
     mat_info = PhysicalMaterialInfo()
-    mat_info.color = Color.CORAL
+    mat_info.color = Color.fromHex("0d1440")
     coral = PhysicalMaterial(mat_info)
     ground_geom = BoxGeometry(size, size, 0.25)
     ground = ProxyScenePart(

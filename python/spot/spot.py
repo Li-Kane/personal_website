@@ -182,7 +182,6 @@ class SpotEnv(gym.Env):
         self._sp.advanceBy(0.001)
 
     def get_observation(self, action: np.ndarray):
-        
         # convert to body frames and use projected gravity
         wsp_vel = self._f2f.relSpVel().toVector6()
         # bsp_vel = -self._f2f.pframeObservedRelSpVel().toVector6()
