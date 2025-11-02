@@ -119,7 +119,7 @@ class SpotEnv(gym.Env):
 
         # Set penalty contact model parameters
         hc = HuntCrossley("hunt_crossley_contact")
-        hc.params.kp = 1e8
+        hc.params.kp = 1e7
         hc.params.kc = 5e6
         hc.params.mu = 1.1
         hc.params.n = 1.5
@@ -182,8 +182,11 @@ class SpotEnv(gym.Env):
         self._sp.advanceBy(0.001)
 
     def get_observation(self, action: np.ndarray):
+        
         # convert to body frames and use projected gravity
-        sp_vel = self._f2f.relSpVel().toVector6()
+        wsp_vel = self._f2f.relSpVel().toVector6()
+        # bsp_vel = -self._f2f.pframeObservedRelSpVel().toVector6()
+        sp_vel = wsp_vel
         obs = np.zeros(48)
         # 3 base_lin_vel
         obs[:3] = sp_vel[3:6]

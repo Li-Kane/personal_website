@@ -15,7 +15,7 @@
 
 from isaacsim import SimulationApp
 
-CONFIG = {"headless": True}   # headless recommended for streaming
+CONFIG = {"headless": False}   # headless recommended for streaming
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 import gymnasium as gym
@@ -90,15 +90,27 @@ while simulation_app.is_running():
     if my_world.is_stopped():
         reset_needed = True
     if my_world.is_playing():
-        if i >= 0 and i < 80:
+        # if i >= 0 and i < 80:
+        #     # forward
+        #     base_command = np.array([2, 0, 0])
+        # elif i >= 80 and i < 130:
+        #     # rotate
+        #     base_command = np.array([1, 0, 2])
+        # elif i >= 130 and i < 200:
+        #     # side ways
+        #     base_command = np.array([0, 1, 0])
+        if i >= 0 and i < 50:
             # forward
             base_command = np.array([2, 0, 0])
-        elif i >= 80 and i < 130:
+        elif i >= 50 and i < 100:
             # rotate
             base_command = np.array([1, 0, 2])
-        elif i >= 130 and i < 200:
-            # side ways
-            base_command = np.array([0, 1, 0])
+        elif i >= 100 and i < 150:
+            # forward
+            base_command = np.array([2, 0, 0])
+        elif i >= 150 and i < 200:
+            # rotate
+            base_command = np.array([1, 0, 2])
         elif i == 200:
             i = 0
             print("Reached: ", spot.robot.get_world_pose()[0])

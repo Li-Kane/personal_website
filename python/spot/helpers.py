@@ -78,4 +78,4 @@ def createEnvironment(
     ground = ProxyScenePart(
         "ground", scene=proxy_scene, geometry=ground_geom, material=coral, layers=LAYER_ALL
     )
-    ground.setTranslation([0, 0, -0.65])
+    ground.setTranslation([0, 0, -0.66])
