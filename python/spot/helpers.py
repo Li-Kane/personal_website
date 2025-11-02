@@ -36,15 +36,6 @@ def policy_to_urdf(arr: np.ndarray) -> np.ndarray:
     Works with shape (12,) or (..., 12)."""
     return np.take(arr, POLICY_TO_URDF, axis=-1)
 
-def calculate_torque(current_pos: float, desired_pos: float, current_vel: float, max_effort: float = 45.0) -> float:
-    # stiffness kp = 80.0
-    # damping kd = 1.5
-    return np.clip(
-        80.0 * (desired_pos - current_pos) - 1.5 * current_vel,
-        -max_effort,
-        max_effort,
-    )
-
 def createMbody(fc: FrameContainer) -> Multibody:
     urdf_file = Path().absolute() / "assets" / "spot_simple.urdf"
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
