@@ -1,6 +1,20 @@
 ### Deploying Policies:
 https://docs.isaacsim.omniverse.nvidia.com/5.1.0/isaac_lab_tutorials/tutorial_policy_deployment.html 
 
+My spot urdf order:
+fl_hip
+fl_uleg
+fl_lleg
+fr_hip
+fr_uleg
+fr_lleg
+hl_hip
+hl_uleg
+hl_lleg
+hr_hip
+hr_uleg
+hr_lleg
+
 Robot Policy Breakdown:
 Joint order:
 ['fl_hx', 'fr_hx', 'hl_hx', 'hr_hx', 'fl_hy', 'fr_hy', 'hl_hy', 'hr_hy', 'fl_kn', 'fr_kn', 'hl_kn', 'hr_kn']

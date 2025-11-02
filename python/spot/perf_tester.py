@@ -13,9 +13,11 @@ def main():
     avg_step_time = np.mean(env._step_times)
     avg_obs_time = np.mean(env._observation_times)
     avg_advance_time = np.mean(env._advance_times)
+    avg_apply_forces_time = np.mean(env._af_per_step)
     print(f"Average step time: {avg_step_time*1000:.2f} ms")
     print(f"Average observation time: {avg_obs_time*1000:.2f} ms")
     print(f"Average advance time: {avg_advance_time*1000:.2f} ms")
+    print(f"Average apply forces time per call: {avg_apply_forces_time*1000:.4f} ms")
 
 if __name__ == "__main__":
     main()

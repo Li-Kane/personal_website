@@ -2,7 +2,6 @@ from typing import Optional, cast
 import numpy as np
 import gymnasium as gym
 from pathlib import Path
-from math import pi, sqrt
 import torch
 from collections import deque
 import time
@@ -11,7 +10,6 @@ from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed
 from Karana.Dynamics.SOADyn_types import (
     MultibodyDS,
-    PinSubhingeDS,
     Linear3SubhingeDS,
     SphericalSubhingeDS,
     HingeDS,
@@ -24,20 +22,15 @@ from Karana.Dynamics import (
     TimedEvent,
     PhysicalBody,
     PhysicalHinge,
-    Algorithms
 )
-from Karana.Math import UnitQuaternion, HomTran, SpatialVector
 from Karana.Scene import (
     BoxGeometry,
-    CylinderGeometry,
     Color,
     PhysicalMaterialInfo,
     PhysicalMaterial,
     LAYER_GRAPHICS,
     LAYER_ALL,
     LAYER_COLLISION,
-    Texture,
-    OrthographicProjection
 )
 from Karana.Scene import ProxyScenePart, ProxyScene
 from Karana.Scene import CoalScene
@@ -46,7 +39,7 @@ from Karana.Models import UniformGravity, UpdateProxyScene, SyncRealTime, Penalt
 from Karana.Math import IntegratorType
 
 def calculate_torque(current_pos: float, desired_pos: float, current_vel: float, max_effort: float = 45.0) -> float:
-    # stiffness kp = 60.0
+    # stiffness kp = 80.0
     # damping kd = 1.5
     return np.clip(
         80.0 * (desired_pos - current_pos) - 1.5 * current_vel,
@@ -55,7 +48,7 @@ def calculate_torque(current_pos: float, desired_pos: float, current_vel: float,
     )
 
 def createMbody(fc: FrameContainer) -> Multibody:
-    urdf_file = Path().absolute() / "assets" / "spot_simpler.urdf"
+    urdf_file = Path().absolute() / "assets" / "spot_simple.urdf"
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
     # convert to full6DOF hinge between root frame and spot base
     multibody_info.base_bodies[0].body.hinge = HingeDS(
@@ -112,7 +105,7 @@ class SpotEnv(gym.Env):
         self.render_mode = "none"
         if render_mode and render_mode in self.metadata["render_modes"]:
             self.render_mode = render_mode
-        # out spot policy controller
+        # our spot policy controller
         self._policy = torch.jit.load("spot_policy.pt", map_location="cpu")
         self._policy.eval()
 
@@ -164,6 +157,7 @@ class SpotEnv(gym.Env):
             self._body
         )
         self._root_hinge = cast(PhysicalHinge, self._body.parentHinge())
+        self._coorddata = self._mb.subhingeCoordData()
 
         # setup graphics if enabled
         if self.render_mode == "human":
@@ -185,14 +179,12 @@ class SpotEnv(gym.Env):
         )
 
         # setup state propagator and models
-        self._sp = StatePropagator(self._mb, integrator_type=IntegratorType.RK4)
+        self._sp = StatePropagator(self._mb, integrator_type=IntegratorType.EULER)
         sp_opts = self._sp.getOptions()
 
-        self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
-
         # for visualization
-        if sync_real_time:
-            self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
+        # if sync_real_time:
+        #     self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
 
         # gravity model
         ug = UniformGravity("grav_model", self._mb)
@@ -218,6 +210,8 @@ class SpotEnv(gym.Env):
 
         # define the apply forces function
         def apply_forces(t, x):
+            t0 = time.perf_counter()
+
             self._fl_hip.setT(calculate_torque(self._fl_hip.getQ(), self._fl_hip_des, self._fl_hip.getU()))
             self._fr_hip.setT(calculate_torque(self._fr_hip.getQ(), self._fr_hip_des, self._fr_hip.getU()))
             self._hl_hip.setT(calculate_torque(self._hl_hip.getQ(), self._hl_hip_des, self._hl_hip.getU()))
@@ -230,6 +224,7 @@ class SpotEnv(gym.Env):
             self._fr_lleg.setT(calculate_torque(self._fr_lleg.getQ(), self._fr_lleg_des, self._fr_lleg.getU(), 115.0))
             self._hl_lleg.setT(calculate_torque(self._hl_lleg.getQ(), self._hl_lleg_des, self._hl_lleg.getU(), 115.0))
             self._hr_lleg.setT(calculate_torque(self._hr_lleg.getQ(), self._hr_lleg_des, self._hr_lleg.getU(), 115.0))
+            self._af_time_ns += time.perf_counter() - t0
         sp_opts.fns.pre_deriv_fns["apply_forces"] = apply_forces
 
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
@@ -248,8 +243,12 @@ class SpotEnv(gym.Env):
         self._observation_times = []
         self._advance_times = []
         self._step_count = 0
+        self._af_time_ns = 0
+        self._af_calls = 0
+        self._af_per_step = []
 
         # set desired position variables
+        self._desired_pos = [0.1, 0.9, -1.5, -0.1, ]
         self._fl_hip_des = 0.1
         self._fr_hip_des = -0.1
         self._hl_hip_des = 0.1
@@ -282,8 +281,8 @@ class SpotEnv(gym.Env):
         self._sp.setState(t_init, self._mb.dynamicsToState())
         self._proxy_scene.update()
 
-        # setup timed event (every 0.5 ms)
-        h = np.timedelta64(int(2e5), "ns")
+        # setup timed event (every 0.2 ms)
+        h = np.timedelta64(int(1e5), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
         self._sp.registerTimedEvent(t)
@@ -335,13 +334,14 @@ class SpotEnv(gym.Env):
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
     def step(self, action: np.ndarray):
+        self._af_time_ns = 0
         step_start = time.perf_counter()
         action_scale = 0.2
 
         # Time observation gathering
         obs_start = time.perf_counter()
         observation = self.get_observation(action)
-        with torch.no_grad():
+        with torch.inference_mode():
             action = self._policy(observation)  # -> (1, 12)
         action = action.squeeze(0).cpu().numpy()
         self._prev_action = action.copy()
@@ -375,6 +375,7 @@ class SpotEnv(gym.Env):
         self._step_times.append(step_time)
         self._observation_times.append(obs_time)
         self._advance_times.append(advance_time)
+        self._af_per_step.append(self._af_time_ns)
 
     def close(self):
         del self._proxy_scene
