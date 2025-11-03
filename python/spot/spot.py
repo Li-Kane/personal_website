@@ -184,17 +184,12 @@ class SpotEnv(gym.Env):
     def get_observation(self, action: np.ndarray):
         # convert to body frames and use projected gravity
         wsp_vel = self._f2f.relSpVel().toVector6()
-        # transform = self._f2f.relTransform()
-        bsp_vel = self._f2f.pframeObservedRelSpVel().toVector6()
-        print("wsp_vel:", wsp_vel)
-        print("bsp_vel:", bsp_vel)
-        sp_vel = bsp_vel
-        sp_vel[5] = wsp_vel[5]  # use world z angular vel
+        transform = self._f2f.relTransform().getMatrix()[:3, :3].transpose()
         obs = np.zeros(48)
         # 3 base_lin_vel
-        obs[:3] = sp_vel[3:6]
+        obs[:3] = np.matmul(transform, wsp_vel[3:6])
         # 3 base_ang_vel
-        obs[3:6] = sp_vel[0:3]
+        obs[3:6] = np.matmul(transform, wsp_vel[0:3])
         # 3 gravity
         proj_gravity = self._body.getGravAccel()
         obs[6:9] = proj_gravity / np.linalg.norm(proj_gravity)
