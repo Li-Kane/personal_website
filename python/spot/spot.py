@@ -74,7 +74,7 @@ class SpotEnv(gym.Env):
 
         # attach a frame2frame to the spot base
         self._body = cast(PhysicalBody, self._mb.getBody("body"))
-        self._f2f = cast(PhysicalBody, self._mb.virtualRoot()).frame2Frame(
+        self._f2f = cast(PhysicalBody, self._mb.getNewtonianFrame()).frame2Frame(
             self._body
         )
         self._root_hinge = cast(PhysicalHinge, self._body.parentHinge())
@@ -173,7 +173,7 @@ class SpotEnv(gym.Env):
         self._proxy_scene.update()
 
         # setup timed event (every 0.2 ms)
-        h = np.timedelta64(int(1e5), "ns")
+        h = np.timedelta64(int(2e5), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
         self._sp.registerTimedEvent(t)
@@ -184,8 +184,12 @@ class SpotEnv(gym.Env):
     def get_observation(self, action: np.ndarray):
         # convert to body frames and use projected gravity
         wsp_vel = self._f2f.relSpVel().toVector6()
-        # bsp_vel = -self._f2f.pframeObservedRelSpVel().toVector6()
-        sp_vel = wsp_vel
+        # transform = self._f2f.relTransform()
+        bsp_vel = self._f2f.pframeObservedRelSpVel().toVector6()
+        print("wsp_vel:", wsp_vel)
+        print("bsp_vel:", bsp_vel)
+        sp_vel = bsp_vel
+        sp_vel[5] = wsp_vel[5]  # use world z angular vel
         obs = np.zeros(48)
         # 3 base_lin_vel
         obs[:3] = sp_vel[3:6]

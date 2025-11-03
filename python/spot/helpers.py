@@ -20,6 +20,7 @@ from Karana.Scene import (
     PhysicalMaterial,
     LAYER_GRAPHICS,
     LAYER_ALL,
+    Texture,
 )
 from Karana.Scene import ProxyScenePart, ProxyScene
 
@@ -85,9 +86,11 @@ def createEnvironment(
 ):
     mat_info = PhysicalMaterialInfo()
     mat_info.color = Color.fromHex("0d1440")
-    coral = PhysicalMaterial(mat_info)
+    texture_file = Path().absolute() / "assets" / "whitegrid.png"
+    mat_info.colorMap = Texture.lookupOrCreateTexture(str(texture_file))
+    ground_mat = PhysicalMaterial(mat_info)
     ground_geom = BoxGeometry(size, size, 0.25)
     ground = ProxyScenePart(
-        "ground", scene=proxy_scene, geometry=ground_geom, material=coral, layers=LAYER_ALL
+        "ground", scene=proxy_scene, geometry=ground_geom, material=ground_mat, layers=LAYER_ALL
     )
     ground.setTranslation([0, 0, -0.66])
