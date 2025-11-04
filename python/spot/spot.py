@@ -1,14 +1,16 @@
+import os
 from typing import Optional, cast
 import numpy as np
 import gymnasium as gym
 import torch
-import time
+from math import sqrt
 
 from helpers import (
     urdf_to_policy,
     policy_to_urdf,
     createMbody,
     createEnvironment,
+    wrap_to_pi,
 )
 from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed
@@ -20,12 +22,29 @@ from Karana.Dynamics import (
 )
 from Karana.Scene import (
     LAYER_COLLISION,
+    ProxyScene,
+    CoalScene,
+    PhysicalMaterialInfo,
+    PhysicalMaterial,
+    Color,
+    ProxyScenePart,
+    CylinderGeometry,
+    LAYER_GRAPHICS,
 )
-from Karana.Scene import ProxyScene
-from Karana.Scene import CoalScene
 from Karana.Collision import FrameCollider, HuntCrossley
 from Karana.Models import UniformGravity, UpdateProxyScene, SyncRealTime, PenaltyContact
-from Karana.Math import IntegratorType
+from Karana.Math import (
+    IntegratorType,
+    UnitQuaternion,
+    HomTran,
+)
+
+DEFAULT_POS = np.array([0.1, 0.9, -1.5, -0.1, 0.9, -1.5, 0.1, 1.1, -1.5, -0.1, 1.1, -1.5])
+EFFORT_LIMITS = np.array([45.0, 45.0, 115.0, 45.0, 45.0, 115.0, 45.0, 45.0, 115.0, 45.0, 45.0, 115.0])
+STIFFNESS = 80.0
+DAMPING = 1.5
+GROUND_SIZE = 25.0
+BOUND = GROUND_SIZE / 2.0 - 2.0
 
 class SpotEnv(gym.Env):
     metadata = {"render_modes": ["human", "none"]}
@@ -40,32 +59,55 @@ class SpotEnv(gym.Env):
         self.render_mode = "none"
         if render_mode and render_mode in self.metadata["render_modes"]:
             self.render_mode = render_mode
+        
         # our spot policy controller
-        self._policy = torch.jit.load("spot_policy.pt", map_location="cpu")
+        policy_path = os.path.join(os.path.dirname(__file__), "spot_policy.pt")
+        self._policy = torch.jit.load(policy_path, map_location="cpu")
         self._policy.eval()
+
+        # (x, y, r, p, y, x, y, z, vr, vp, vy, vx, vy, vz, sin(angle_diff), cos(angle_diff))
+        low = np.array([
+            -BOUND,
+            -BOUND,
+            -np.pi,
+            -np.pi,
+            -np.pi,
+            -BOUND,
+            -BOUND,
+            -1.0,
+            -1.0,
+            -1.0,
+            -2.5,
+            -2.5,
+            -2.5,
+            -2.5,
+            -1.0,
+            -1.0,
+        ], dtype=np.float32)
+        high = np.array([
+            BOUND,
+            BOUND,
+            np.pi,
+            np.pi,
+            np.pi,
+            BOUND,
+            BOUND,
+            1.0,
+            1.0,
+            1.0,
+            2.5,
+            2.5,
+            2.5,
+            2.5,
+            1.0,
+            1.0,
+        ], dtype=np.float32)
+        self.observation_space = gym.spaces.Box(low=low, high=high, dtype=np.float32)
+        # controller of (forward, side, rotate)
+        self.action_space = gym.spaces.Discrete(5)
 
         # initialize the simulation
         self.init_sim(port, sync_real_time)
-
-        # init vars
-        self._agent_pos = np.array([0.0, 0.0])
-        self._default_pos = np.array(
-            [
-                0.1,
-                0.9,
-                -1.5,
-                -0.1,
-                0.9,
-                -1.5,
-                0.1,
-                1.1,
-                -1.5,
-                -0.1,
-                1.1,
-                -1.5,
-            ]
-        )
-        self._prev_action = np.zeros(12)
 
     def init_sim(self, port: int = 0, sync_real_time: bool = False):
         # setup bodies and scene
@@ -79,20 +121,34 @@ class SpotEnv(gym.Env):
         )
         self._root_hinge = cast(PhysicalHinge, self._body.parentHinge())
         self._coorddata = self._mb.subhingeCoordData()
-        self._effort_limits = np.array([45.0, 45.0, 115.0, 45.0, 45.0, 115.0, 45.0, 45.0, 115.0, 45.0, 45.0, 115.0])
 
         # setup graphics if enabled
         if self.render_mode == "human":
-            self._cleanup_graphics, viz_scene = self._mb.setupGraphics(port=port, local_client='never')
+            self._cleanup_graphics, viz_scene = self._mb.setupGraphics(axes=0.0, port=port, local_client='never')
             viz_scene.defaultCamera().pointCameraAt(
-                [0.0, 3.0, 1.5], [0, 0, 0,], [0, 0, 1],
+                [0.0, 25.0, 15.0], [0, 0, 0,], [0, 0, 1],
             )
             self._proxy_scene = self._mb.getScene()
         else:
             self._proxy_scene = ProxyScene(f"{self._mb.name()}_proxyscene", self._mb.virtualRoot())
 
+        # setup a target object for the robot to follow
+        mat_info = PhysicalMaterialInfo()
+        mat_info.color = Color.RED
+        red = PhysicalMaterial(mat_info)
+        target_geom = CylinderGeometry(0.25, 0.05)
+        self._target = ProxyScenePart(
+            "target_part",
+            scene=self._proxy_scene,
+            geometry=target_geom,
+            material=red,
+            layers=LAYER_GRAPHICS,
+        )
+        self._target.setUnitQuaternion(UnitQuaternion([1 / sqrt(2), 0, 0, 1 / sqrt(2)]))
+        self._target.setTranslation(np.array([0.0, 0.0, -0.5]))
+
         # create the environment
-        createEnvironment(100, self._proxy_scene)
+        createEnvironment(GROUND_SIZE, self._proxy_scene)
 
         # setup collision client
         col_scene = CoalScene("collision_scene")
@@ -132,40 +188,14 @@ class SpotEnv(gym.Env):
 
         # define the apply forces function
         def apply_forces(t, x):
-            t0 = time.perf_counter()
             Q = self._coorddata.getQ()[6:]
             U = self._coorddata.getU()[6:]
             err = self._desired_pos - Q
-            new_T = np.clip(80.0 * err - 1.5 * U, -self._effort_limits, self._effort_limits)
+            new_T = np.clip(STIFFNESS * err - DAMPING * U, -EFFORT_LIMITS, EFFORT_LIMITS)
             T = self._coorddata.getT()
             T[6:] = new_T
             self._coorddata.setT(T)
-            self._af_time_ns += time.perf_counter() - t0
         sp_opts.fns.pre_deriv_fns["apply_forces"] = apply_forces
-
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
-        super().reset(seed=seed)
-        if self.np_random is None:
-            self.np_random, _ = gym.utils.seeding.np_random(seed)
-        self._agent_pos = np.random.uniform(-10.0, 10.0, size=(2,))
-
-        # move base to random position
-        # self._root_hinge.fitQ(
-        #     HomTran(vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
-        # )
-
-        # timing metrics
-        self._step_times = []
-        self._observation_times = []
-        self._advance_times = []
-        self._step_count = 0
-        self._af_time_ns = 0
-        self._af_per_step = []
-
-        self._desired_pos = self._default_pos
-        Q = self._coorddata.getQ()
-        Q[6:] = self._desired_pos
-        self._coorddata.setQ(Q)
 
         # simulation
         t_init = np.timedelta64(0, "ns")
@@ -179,10 +209,53 @@ class SpotEnv(gym.Env):
         self._sp.registerTimedEvent(t)
         del t
 
-        self._sp.advanceBy(0.001)
+    # calculate previous distance and angle difference
+    def calc_angle_diff(self):
+        difference = self._target_pos - self._agent_pose[3:5]
+        ideal_angle = np.arctan2(difference[1], difference[0])
+        distance = np.linalg.norm(difference)
+        angle_diff = np.array([wrap_to_pi(ideal_angle - self._agent_pose[2])])
+        return distance, angle_diff
 
-    def get_observation(self, action: np.ndarray):
-        # convert to body frames and use projected gravity
+    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
+        super().reset(seed=seed)
+        self._mb.resetData()
+        if self.np_random is None:
+            self.np_random, _ = gym.utils.seeding.np_random(seed)
+
+        # move base and targets to random position
+        self._target_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
+        agent_yaw = self.np_random.uniform(-np.pi, np.pi, size=(1,)).astype(np.float32)
+        agent_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
+        orientation = UnitQuaternion(agent_yaw[0], [0.0, 0.0, 1.0])
+        self._root_hinge.fitQ(
+            HomTran(q=orientation, vec=np.array([agent_pos[0], agent_pos[1], 0.0]))
+        )
+        self._target.setTranslation([self._target_pos[0], self._target_pos[1], -0.5])
+
+        # set initial qpos
+        self._desired_pos = DEFAULT_POS
+        Q = self._coorddata.getQ()
+        Q[6:] = self._desired_pos
+        self._coorddata.setQ(Q)
+
+        # simulation
+        t_init = np.timedelta64(0, "ns")
+        self._sp.setState(t_init, self._mb.dynamicsToState())
+        self._proxy_scene.update()
+        self._sp.advanceBy(0.01)
+
+        # init vars
+        self._prev_action = np.zeros(12, dtype=np.float32)
+        self._terminated = False
+        self._agent_pose = self._f2f.relTransform().toVector6()
+        self._agent_vel = np.zeros(6, dtype=np.float32)
+        self._distance, self._angle_diff = self.calc_angle_diff()
+
+        return self._get_obs(), self._get_info()
+
+    # create a (48,) array to feed into the spot policy
+    def get_policy_observation(self, action: np.ndarray):
         wsp_vel = self._f2f.relSpVel().toVector6()
         transform = self._f2f.relTransform().getMatrix()[:3, :3].transpose()
         obs = np.zeros(48)
@@ -196,7 +269,7 @@ class SpotEnv(gym.Env):
         # 3 command
         obs[9:12] = action
         # 12 joint offset (current_joint_pos - default_pos)
-        Q = urdf_to_policy(self._coorddata.getQ()[6:] - self._default_pos)
+        Q = urdf_to_policy(self._coorddata.getQ()[6:] - DEFAULT_POS)
         obs[12:24] = Q
         # 12 joint velocities
         U = urdf_to_policy(self._coorddata.getU()[6:])
@@ -205,43 +278,83 @@ class SpotEnv(gym.Env):
         obs[36:48] = self._prev_action
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
-    def step(self, action: np.ndarray):
-        self._af_time_ns = 0
-        step_start = time.perf_counter()
-        action_scale = 0.2
+    def _get_obs(self):
+        return np.concatenate(
+            (
+                self._target_pos,
+                self._agent_pose,
+                self._agent_vel,
+                np.sin(self._angle_diff),
+                np.cos(self._angle_diff),
+            )
+        ).astype(np.float32)
+    
+    def _get_info(self):
+        return {
+            "distance_to_target": self._distance,
+            "angle_difference": self._angle_diff,
+        }
+    
+    def action_to_command(self, action: int) -> np.ndarray:
+        if action == 0:
+            return np.array([2.0, 0.0, 0.0])  # forward
+        elif action == 1:
+            return np.array([-2.0, 0.0, 0.0])  # backward
+        elif action == 2:
+            return np.array([1.0, 0.0, 2.0])  # rotate left
+        elif action == 3:
+            return np.array([1.0, 0.0, -2.0])  # rotate right
+        else:
+            return np.array([0.0, 0.0, 0.0])  # stop
+
+    def step(self, action: int):
+        action = self.action_to_command(action)
 
         # Time observation gathering
-        obs_start = time.perf_counter()
-        observation = self.get_observation(action)
+        observation = self.get_policy_observation(action)
         with torch.inference_mode():
             policy_action = self._policy(observation)  # -> (1, 12)
         policy_action = policy_action.squeeze(0).cpu().numpy()
         self._prev_action = policy_action
-        obs_time = time.perf_counter() - obs_start
 
         # apply action to joints
-        action = policy_to_urdf(policy_action * action_scale)
+        action = policy_to_urdf(policy_action * 0.2) # use 0.2 from isaacsim
         Q = self._coorddata.getQ()
-        Q[6:] = self._default_pos + action
-        self._desired_pos = self._default_pos + action
+        Q[6:] = DEFAULT_POS + action
+        self._desired_pos = DEFAULT_POS + action
         
         # Time advanceBy
-        advance_start = time.perf_counter()
         self._sp.advanceBy(0.02)
-        advance_time = time.perf_counter() - advance_start
+
+        # get our gymnasium observation values
+        T = self._f2f.relTransform()
+        self._agent_pose = T.toVector6()
+        self._agent_vel = self._f2f.relSpVel().toVector6()
+        distance, angle_diff = self.calc_angle_diff()
+
+        # check termination and do reward calculations
+        reward = 0.0
+        if bool(distance < 1.0):
+            self._terminated = True
+            reward += 10.0
+        elif bool(np.abs(self._agent_pose[5]) > 0.2):
+            self._terminated = True
+            reward -= 10.0
+        else:
+            progress = self._distance - distance
+            angle_progress = np.abs(self._angle_diff) - np.abs(angle_diff)
+            reward += progress * 2.5
+            reward += angle_progress * 0.3
+            reward -= 0.01 # step penalty
+            reward = reward.item()
+            self._distance = distance
+            self._angle_diff = angle_diff
         
-        # Calculate total step time
-        step_time = time.perf_counter() - step_start
-        
-        # Store timing metrics
-        self._step_count += 1
-        self._step_times.append(step_time)
-        self._observation_times.append(obs_time)
-        self._advance_times.append(advance_time)
-        self._af_per_step.append(self._af_time_ns)
+        # observation, reward, terminated, truncated, data
+        return self._get_obs(), reward, self._terminated, False, self._get_info()
 
     def close(self):
-        del self._proxy_scene
+        del self._proxy_scene, self._body, self._f2f, self._root_hinge, self._coorddata, self._target
         discard(self._sp)
         if self.render_mode == "human":
             self._cleanup_graphics()
