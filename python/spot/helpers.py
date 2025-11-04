@@ -38,7 +38,7 @@ def policy_to_urdf(arr: np.ndarray) -> np.ndarray:
     return np.take(arr, POLICY_TO_URDF, axis=-1)
 
 def createMbody(fc: FrameContainer) -> Multibody:
-    urdf_file = Path().absolute() / "assets" / "spot_simple.urdf"
+    urdf_file = Path(__file__).parent / "assets" / "spot_simple.urdf"
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
     # convert to full6DOF hinge between root frame and spot base
     multibody_info.base_bodies[0].body.hinge = HingeDS(
@@ -86,7 +86,7 @@ def createEnvironment(
 ):
     mat_info = PhysicalMaterialInfo()
     mat_info.color = Color.fromHex("0d1440")
-    texture_file = Path().absolute() / "assets" / "whitegrid.png"
+    texture_file = Path(__file__).parent / "assets" / "whitegrid.png"
     mat_info.colorMap = Texture.lookupOrCreateTexture(str(texture_file))
     ground_mat = PhysicalMaterial(mat_info)
     ground_geom = BoxGeometry(size, size, 0.25)
