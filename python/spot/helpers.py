@@ -93,4 +93,8 @@ def createEnvironment(
     ground = ProxyScenePart(
         "ground", scene=proxy_scene, geometry=ground_geom, material=ground_mat, layers=LAYER_ALL
     )
-    ground.setTranslation([0, 0, -0.66])
+    ground.setTranslation([0, 0, -0.65])
+
+# helper to wrap angles
+def wrap_to_pi(x):
+    return (x + np.pi) % (2 * np.pi) - np.pi
