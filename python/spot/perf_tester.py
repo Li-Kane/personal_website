@@ -7,6 +7,9 @@ def main():
     env = SpotEnv(port=3247, render_mode="human", sync_real_time=True)
     # if they press enter, reset the environment, q to quit
     env.reset()
+    action = np.array([1.0, 0.0, 2.0])
+    for _ in range(100):
+        env.step(action)
     action = np.array([1.0, 0.0, 0.0])
     for _ in range(1000):
         env.step(action)
