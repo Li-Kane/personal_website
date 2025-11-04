@@ -23,9 +23,9 @@ def main():
             elif action_input.lower() == 's':
                 action = np.array([-1.0, 0.0, 0.0])
             elif action_input.lower() == 'a':
-                action = np.array([1.0, 0.0, 2.0])
+                action = np.array([0.5, 0.0, 1.0])
             elif action_input.lower() == 'd':
-                action = np.array([1.0, 0.0, -2.0])
+                action = np.array([0.5, 0.0, -1.0])
             elif action_input.lower() == "p":
                 action = np.array([0.0, 0.0, 0.0])
             env.step(action)

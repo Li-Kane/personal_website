@@ -10,9 +10,8 @@ PC Simpler URDF:
 
 ## Observations
 target pos (x, y)
-agent pose (x, y, z, r, p, y)
-angular vel (vr, vp, vy)
-lin vel (vx, vy, vz)
+agent pose (r, p, y, x, y, z)
+agent velocity (vr, vp, vy, vx, vy, vz)
 angle diff (sin, cos)
 
 ## Actions
