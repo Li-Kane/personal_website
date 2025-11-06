@@ -21,7 +21,7 @@ def main():
             break
         else:
             env.reset()
-        action = 0
+        action = 4
         while True:
             # w a s d to move the robot, q to quit
             action_input = input()

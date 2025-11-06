@@ -336,16 +336,16 @@ class SpotEnv(gym.Env):
         reward = 0.0
         if bool(distance < 1.0):
             self._terminated = True
-            reward += 10.0
+            reward += 1.0
         elif bool(np.abs(self._agent_pose[5]) > 0.2):
             self._terminated = True
-            reward -= 10.0
+            reward -= 1.0
         else:
             progress = self._distance - distance
             angle_progress = np.abs(self._angle_diff) - np.abs(angle_diff)
-            reward += progress * 2.5
-            reward += angle_progress * 0.3
-            reward -= 0.01 # step penalty
+            reward += progress * 0.15
+            reward += angle_progress * 0.025
+            reward -= 0.001 # step penalty
             reward = reward.item()
             self._distance = distance
             self._angle_diff = angle_diff
