@@ -66,19 +66,51 @@ class SpotEnv(gym.Env):
         self._policy.eval()
 
         # (x, y, r, p, y, x, y, z, vr, vp, vy, vx, vy, vz, sin(angle_diff), cos(angle_diff))
+        # low = np.array([
+        #     -BOUND,
+        #     -BOUND,
+        #     -np.pi,
+        #     -np.pi,
+        #     -np.pi,
+        #     -BOUND,
+        #     -BOUND,
+        #     -1.0,
+        #     -1.0,
+        #     -1.0,
+        #     -2.5,
+        #     -2.5,
+        #     -2.5,
+        #     -2.5,
+        #     -1.0,
+        #     -1.0,
+        # ], dtype=np.float32)
+        # high = np.array([
+        #     BOUND,
+        #     BOUND,
+        #     np.pi,
+        #     np.pi,
+        #     np.pi,
+        #     BOUND,
+        #     BOUND,
+        #     1.0,
+        #     1.0,
+        #     1.0,
+        #     2.5,
+        #     2.5,
+        #     2.5,
+        #     2.5,
+        #     1.0,
+        #     1.0,
+        # ], dtype=np.float32)
+
+        # [tx, ty, x, y, z, yaw_vel, vx, vy, sin(angle_diff), cos(angle_diff)]
         low = np.array([
             -BOUND,
             -BOUND,
-            -np.pi,
-            -np.pi,
-            -np.pi,
             -BOUND,
             -BOUND,
             -1.0,
-            -1.0,
-            -1.0,
-            -2.5,
-            -2.5,
+            -np.pi,
             -2.5,
             -2.5,
             -1.0,
@@ -87,24 +119,20 @@ class SpotEnv(gym.Env):
         high = np.array([
             BOUND,
             BOUND,
-            np.pi,
-            np.pi,
-            np.pi,
             BOUND,
             BOUND,
             1.0,
-            1.0,
-            1.0,
-            2.5,
-            2.5,
+            np.pi,
             2.5,
             2.5,
             1.0,
             1.0,
         ], dtype=np.float32)
         self.observation_space = gym.spaces.Box(low=low, high=high, dtype=np.float32)
+        
         # controller of (forward, side, rotate)
-        self.action_space = gym.spaces.Discrete(5)
+        # self.action_space = gym.spaces.Discrete(5)
+        self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
 
         # initialize the simulation
         self.init_sim(port, sync_real_time)
@@ -278,12 +306,16 @@ class SpotEnv(gym.Env):
         obs[36:48] = self._prev_action
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
+    # [tx, ty, x, y, z, vx, vy, yaw_vel, sin(angle_diff), cos(angle_diff)]
     def _get_obs(self):
         return np.concatenate(
             (
+                # tx, ty
                 self._target_pos,
-                self._agent_pose,
-                self._agent_vel,
+                # x, y, z
+                self._agent_pose[3:],
+                # yaw vel, vx, vy
+                self._agent_vel[2:5],
                 np.sin(self._angle_diff),
                 np.cos(self._angle_diff),
             )
@@ -307,8 +339,10 @@ class SpotEnv(gym.Env):
         else:
             return np.array([0.0, 0.0, 0.0])  # stop
 
-    def step(self, action: int):
-        action = self.action_to_command(action)
+    # def step(self, action: int):
+    def step(self, action: np.ndarray):
+        # action = self.action_to_command(action)
+        action = action * 2.0
 
         # Time observation gathering
         observation = self.get_policy_observation(action)
@@ -322,7 +356,6 @@ class SpotEnv(gym.Env):
         Q = self._coorddata.getQ()
         Q[6:] = DEFAULT_POS + action
         self._desired_pos = DEFAULT_POS + action
-        
         # Time advanceBy
         self._sp.advanceBy(0.02)
 
@@ -336,16 +369,16 @@ class SpotEnv(gym.Env):
         reward = 0.0
         if bool(distance < 1.0):
             self._terminated = True
-            reward += 10.0
+            reward += 1.0
         elif bool(np.abs(self._agent_pose[5]) > 0.2):
             self._terminated = True
-            reward -= 10.0
+            reward -= 1.0
         else:
             progress = self._distance - distance
             angle_progress = np.abs(self._angle_diff) - np.abs(angle_diff)
-            reward += progress * 2.5
-            reward += angle_progress * 0.3
-            reward -= 0.01 # step penalty
+            reward += progress * 0.15
+            reward += angle_progress * 0.025
+            reward -= 0.001 # step penalty
             reward = reward.item()
             self._distance = distance
             self._angle_diff = angle_diff
