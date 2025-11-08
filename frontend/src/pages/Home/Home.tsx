@@ -3,9 +3,8 @@ import './Home.css'
 function Home() {
 
   return (
-    <h1>
-      Home
-    </h1>
+    <iframe id="sim-iframe" src="http://localhost:3247">
+    </iframe>
   )
 }
 
