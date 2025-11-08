@@ -1,18 +1,10 @@
 from spot import SpotEnv
 import gymnasium as gym
 import numpy as np
-# from gymnasium.utils.env_checker import check_env
-
-gym.register(
-    id="kdFlex-Spot",
-    entry_point=SpotEnv,
-    max_episode_steps=1000,
-)
 
 def main():
     # setup simulation
-    env = gym.make("kdFlex-Spot", port=3247, render_mode="human", sync_real_time=True)
-    # check_env(env.unwrapped, warn=True)
+    env = SpotEnv(port=3247, render_mode="human", sync_real_time=True)
     # if they press enter, reset the environment, q to quit
     while True:
         str_input = input("Press Enter to reset the environment, or 'q' to quit: ")
@@ -42,10 +34,7 @@ def main():
                 action = np.array([0.5, 0.0, -1.0])
             elif action_input.lower() == "p":
                 action = np.array([0.0, 0.0, 0.0])
-            obs, reward, done, truncated, info = env.step(action)
-            if done:
-                print("Episode finished. Resetting environment.")
-                break
+            env.step(action)
 
 if __name__ == "__main__":
     main()

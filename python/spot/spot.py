@@ -65,75 +65,6 @@ class SpotEnv(gym.Env):
         self._policy = torch.jit.load(policy_path, map_location="cpu")
         self._policy.eval()
 
-        # (x, y, r, p, y, x, y, z, vr, vp, vy, vx, vy, vz, sin(angle_diff), cos(angle_diff))
-        # low = np.array([
-        #     -BOUND,
-        #     -BOUND,
-        #     -np.pi,
-        #     -np.pi,
-        #     -np.pi,
-        #     -BOUND,
-        #     -BOUND,
-        #     -1.0,
-        #     -1.0,
-        #     -1.0,
-        #     -2.5,
-        #     -2.5,
-        #     -2.5,
-        #     -2.5,
-        #     -1.0,
-        #     -1.0,
-        # ], dtype=np.float32)
-        # high = np.array([
-        #     BOUND,
-        #     BOUND,
-        #     np.pi,
-        #     np.pi,
-        #     np.pi,
-        #     BOUND,
-        #     BOUND,
-        #     1.0,
-        #     1.0,
-        #     1.0,
-        #     2.5,
-        #     2.5,
-        #     2.5,
-        #     2.5,
-        #     1.0,
-        #     1.0,
-        # ], dtype=np.float32)
-
-        # [tx, ty, x, y, z, yaw_vel, vx, vy, sin(angle_diff), cos(angle_diff)]
-        low = np.array([
-            -BOUND,
-            -BOUND,
-            -BOUND,
-            -BOUND,
-            -1.0,
-            -np.pi,
-            -2.5,
-            -2.5,
-            -1.0,
-            -1.0,
-        ], dtype=np.float32)
-        high = np.array([
-            BOUND,
-            BOUND,
-            BOUND,
-            BOUND,
-            1.0,
-            np.pi,
-            2.5,
-            2.5,
-            1.0,
-            1.0,
-        ], dtype=np.float32)
-        self.observation_space = gym.spaces.Box(low=low, high=high, dtype=np.float32)
-        
-        # controller of (forward, side, rotate)
-        # self.action_space = gym.spaces.Discrete(5)
-        self.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(3,), dtype=np.float32)
-
         # initialize the simulation
         self.init_sim(port, sync_real_time)
 
@@ -237,31 +168,24 @@ class SpotEnv(gym.Env):
         self._sp.registerTimedEvent(t)
         del t
 
-    # calculate previous distance and angle difference
-    def calc_angle_diff(self):
-        difference = self._target_pos - self._agent_pose[3:5]
-        ideal_angle = np.arctan2(difference[1], difference[0])
-        distance = np.linalg.norm(difference)
-        angle_diff = np.array([wrap_to_pi(ideal_angle - self._agent_pose[2])])
-        return distance, angle_diff
-
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         self._mb.resetData()
         if self.np_random is None:
             self.np_random, _ = gym.utils.seeding.np_random(seed)
 
-        # move base and targets to random position
+        # init vars
         self._target_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
-        agent_yaw = self.np_random.uniform(-np.pi, np.pi, size=(1,)).astype(np.float32)
-        agent_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
-        orientation = UnitQuaternion(agent_yaw[0], [0.0, 0.0, 1.0])
+        self._agent_yaw = self.np_random.uniform(-np.pi, np.pi, size=(1,)).astype(np.float32)
+        self._agent_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
+        self._prev_action = np.zeros(12, dtype=np.float32)
+        
+        # set sim according to vars
+        orientation = UnitQuaternion(self._agent_yaw[0], [0.0, 0.0, 1.0])
         self._root_hinge.fitQ(
-            HomTran(q=orientation, vec=np.array([agent_pos[0], agent_pos[1], 0.0]))
+            HomTran(q=orientation, vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
         )
         self._target.setTranslation([self._target_pos[0], self._target_pos[1], -0.5])
-
-        # set initial qpos
         self._desired_pos = DEFAULT_POS
         Q = self._coorddata.getQ()
         Q[6:] = self._desired_pos
@@ -272,15 +196,6 @@ class SpotEnv(gym.Env):
         self._sp.setState(t_init, self._mb.dynamicsToState())
         self._proxy_scene.update()
         self._sp.advanceBy(0.01)
-
-        # init vars
-        self._prev_action = np.zeros(12, dtype=np.float32)
-        self._terminated = False
-        self._agent_pose = self._f2f.relTransform().toVector6()
-        self._agent_vel = np.zeros(6, dtype=np.float32)
-        self._distance, self._angle_diff = self.calc_angle_diff()
-
-        return self._get_obs(), self._get_info()
 
     # create a (48,) array to feed into the spot policy
     def get_policy_observation(self, action: np.ndarray):
@@ -306,39 +221,6 @@ class SpotEnv(gym.Env):
         obs[36:48] = self._prev_action
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
-    # [tx, ty, x, y, z, vx, vy, yaw_vel, sin(angle_diff), cos(angle_diff)]
-    def _get_obs(self):
-        return np.concatenate(
-            (
-                # tx, ty
-                self._target_pos,
-                # x, y, z
-                self._agent_pose[3:],
-                # yaw vel, vx, vy
-                self._agent_vel[2:5],
-                np.sin(self._angle_diff),
-                np.cos(self._angle_diff),
-            )
-        ).astype(np.float32)
-    
-    def _get_info(self):
-        return {
-            "distance_to_target": self._distance,
-            "angle_difference": self._angle_diff,
-        }
-    
-    def action_to_command(self, action: int) -> np.ndarray:
-        if action == 0:
-            return np.array([2.0, 0.0, 0.0])  # forward
-        elif action == 1:
-            return np.array([-2.0, 0.0, 0.0])  # backward
-        elif action == 2:
-            return np.array([1.0, 0.0, 2.0])  # rotate left
-        elif action == 3:
-            return np.array([1.0, 0.0, -2.0])  # rotate right
-        else:
-            return np.array([0.0, 0.0, 0.0])  # stop
-
     # def step(self, action: int):
     def step(self, action: np.ndarray):
         # action = self.action_to_command(action)
@@ -358,33 +240,6 @@ class SpotEnv(gym.Env):
         self._desired_pos = DEFAULT_POS + action
         # Time advanceBy
         self._sp.advanceBy(0.02)
-
-        # get our gymnasium observation values
-        T = self._f2f.relTransform()
-        self._agent_pose = T.toVector6()
-        self._agent_vel = self._f2f.relSpVel().toVector6()
-        distance, angle_diff = self.calc_angle_diff()
-
-        # check termination and do reward calculations
-        reward = 0.0
-        if bool(distance < 1.0):
-            self._terminated = True
-            reward += 1.0
-        elif bool(np.abs(self._agent_pose[5]) > 0.2):
-            self._terminated = True
-            reward -= 1.0
-        else:
-            progress = self._distance - distance
-            angle_progress = np.abs(self._angle_diff) - np.abs(angle_diff)
-            reward += progress * 0.15
-            reward += angle_progress * 0.025
-            reward -= 0.001 # step penalty
-            reward = reward.item()
-            self._distance = distance
-            self._angle_diff = angle_diff
-        
-        # observation, reward, terminated, truncated, data
-        return self._get_obs(), reward, self._terminated, False, self._get_info()
 
     def close(self):
         del self._proxy_scene, self._body, self._f2f, self._root_hinge, self._coorddata, self._target
