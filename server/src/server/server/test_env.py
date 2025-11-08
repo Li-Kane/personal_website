@@ -1,6 +1,4 @@
-from spot import SpotEnv
-import gymnasium as gym
-import numpy as np
+from server.src.spot_sim.spot_sim.spot import SpotEnv
 
 def main():
     # setup simulation

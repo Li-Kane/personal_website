@@ -5,12 +5,11 @@ import gymnasium as gym
 import torch
 from math import sqrt
 
-from helpers import (
+from spot_sim.helpers import (
     urdf_to_policy,
     policy_to_urdf,
     createMbody,
     createEnvironment,
-    wrap_to_pi,
 )
 from Karana.Frame import FrameContainer
 from Karana.Core import discard, allDestroyed

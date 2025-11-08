@@ -1,1 +1,9 @@
+# kdflex .deb and evaluation.license files
 /libs/
+
+# ROS2 Specific
+build/
+install/
+log/
+*.pyc
+__pycache__/
