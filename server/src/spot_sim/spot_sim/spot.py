@@ -4,6 +4,7 @@ import numpy as np
 import gymnasium as gym
 import torch
 from math import sqrt
+from ament_index_python.packages import get_package_share_directory
 
 from spot_sim.helpers import (
     urdf_to_policy,
@@ -60,7 +61,7 @@ class SpotEnv(gym.Env):
             self.render_mode = render_mode
         
         # our spot policy controller
-        policy_path = os.path.join(os.path.dirname(__file__), "spot_policy.pt")
+        policy_path = os.path.join(get_package_share_directory('spot_sim'), "resources", "spot_policy.pt")
         self._policy = torch.jit.load(policy_path, map_location="cpu")
         self._policy.eval()
 
@@ -220,11 +221,16 @@ class SpotEnv(gym.Env):
         obs[36:48] = self._prev_action
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
+    # for my simple control algorithm, I need x, y, yaw of the robot dog
+    def get_observation(self):
+        return np.array([
+            self._agent_pos[0],
+            self._agent_pos[1],
+            self._agent_yaw,
+        ])
+
     # def step(self, action: int):
     def step(self, action: np.ndarray):
-        # action = self.action_to_command(action)
-        action = action * 2.0
-
         # Time observation gathering
         observation = self.get_policy_observation(action)
         with torch.inference_mode():
@@ -239,6 +245,11 @@ class SpotEnv(gym.Env):
         self._desired_pos = DEFAULT_POS + action
         # Time advanceBy
         self._sp.advanceBy(0.02)
+
+        # update vars
+        transform = self._f2f.relTransform().toVector6()
+        self._agent_pos = self._f2f.relTransform().toVector6()[3:5]
+        self._agent_yaw = transform[2]
 
     def close(self):
         del self._proxy_scene, self._body, self._f2f, self._root_hinge, self._coorddata, self._target

@@ -1,6 +1,8 @@
+import os
 import numpy as np
 from pathlib import Path
 from collections import deque
+from ament_index_python.packages import get_package_share_directory
 
 from Karana.Frame import FrameContainer
 from Karana.Dynamics.SOADyn_types import (
@@ -38,7 +40,8 @@ def policy_to_urdf(arr: np.ndarray) -> np.ndarray:
     return np.take(arr, POLICY_TO_URDF, axis=-1)
 
 def createMbody(fc: FrameContainer) -> Multibody:
-    urdf_file = Path(__file__).parent / "assets" / "spot_simple.urdf"
+    urdf_path = os.path.join(get_package_share_directory('spot_sim'), "resources", "spot_simple.urdf")
+    urdf_file = Path(urdf_path)
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
     # convert to full6DOF hinge between root frame and spot base
     multibody_info.base_bodies[0].body.hinge = HingeDS(
@@ -86,8 +89,8 @@ def createEnvironment(
 ):
     mat_info = PhysicalMaterialInfo()
     mat_info.color = Color.fromHex("0d1440")
-    texture_file = Path(__file__).parent / "assets" / "whitegrid.png"
-    mat_info.colorMap = Texture.lookupOrCreateTexture(str(texture_file))
+    texture_path = os.path.join(get_package_share_directory('spot_sim'), "resources", "whitegrid.png")
+    mat_info.colorMap = Texture.lookupOrCreateTexture(texture_path)
     ground_mat = PhysicalMaterial(mat_info)
     ground_geom = BoxGeometry(size, size, 0.25)
     ground = ProxyScenePart(
