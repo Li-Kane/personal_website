@@ -116,8 +116,8 @@ def main(args=None):
             server = Server()
             
             # Start WebSocket server in a separate thread
-            # ws_thread = threading.Thread(target=run_websocket_server, args=(server,), daemon=True)
-            # ws_thread.start()
+            ws_thread = threading.Thread(target=run_websocket_server, args=(server,), daemon=True)
+            ws_thread.start()
 
             rclpy.spin(server)
     except (KeyboardInterrupt, ExternalShutdownException):

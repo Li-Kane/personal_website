@@ -12,8 +12,8 @@ services:
     networks:
       - app-network
     environment:
-      - VITE_SERVER_URL=http://server:3247
-      - VITE_WS_URL=ws://server:8080
+      - VITE_SERVER_URL=http://localhost:3247
+      - VITE_WS_URL=ws://localhost:8080
     depends_on:
       - server
 

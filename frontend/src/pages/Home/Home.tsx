@@ -10,22 +10,40 @@ function Home() {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3247'
 
   useEffect(() => {
-    // Connect to WebSocket
-    const ws = new WebSocket(WS_URL)
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 10;
+    const delay = 1000;
     
-    ws.onopen = () => {
-      console.log('WebSocket connected')
+    const connectWebSocket = () => {
+      const ws = new WebSocket(WS_URL)
+      
+      ws.onopen = () => {
+        console.log('WebSocket connected')
+        reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+      }
+      
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error)
+      }
+      
+      ws.onclose = () => {
+        console.log('WebSocket disconnected')
+        if (reconnectAttempts < maxReconnectAttempts) {
+          reconnectAttempts++;
+          console.log(`Reconnecting... Attempt ${reconnectAttempts}`)
+          setTimeout(() => {
+            connectWebSocket(); // Recursively reconnect
+          }, delay);
+        } else {
+          console.error('Max reconnect attempts reached. Could not reconnect to WebSocket.')
+        }
+      }
+      
+      wsRef.current = ws
     }
     
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-    
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
-    }
-    
-    wsRef.current = ws
+    // Initial connection
+    connectWebSocket()
 
     // Cleanup on unmount
     return () => {
@@ -41,6 +59,7 @@ function Home() {
         x: event.clientX,
         y: event.clientY,
       }
+      console.log('Sending mouse data:', mouseData)
       wsRef.current.send(JSON.stringify(mouseData))
     }
   }
