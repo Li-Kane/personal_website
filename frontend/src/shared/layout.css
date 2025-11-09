@@ -9,20 +9,23 @@
     position: fixed;
     height: 5%;
     width: 100%;
-    padding: 1rem 2rem;
 }
 
 nav {
+    padding: 1rem 3rem;
     height: 100%;
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 1rem;
 }
 
 .nav-link {
     color: rgb(255, 255, 255);
     text-decoration: none;
-    font-weight: 500;
+    /* font-weight: 700; */
+    font-size: 2rem;
+    font-family: 'DirtyInfant';
 }
 
 .nav-link.active {

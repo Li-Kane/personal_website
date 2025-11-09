@@ -43,7 +43,7 @@ DEFAULT_POS = np.array([0.1, 0.9, -1.5, -0.1, 0.9, -1.5, 0.1, 1.1, -1.5, -0.1, 1
 EFFORT_LIMITS = np.array([45.0, 45.0, 115.0, 45.0, 45.0, 115.0, 45.0, 45.0, 115.0, 45.0, 45.0, 115.0])
 STIFFNESS = 80.0
 DAMPING = 1.5
-GROUND_SIZE = 25.0
+GROUND_SIZE = 50.0
 BOUND = GROUND_SIZE / 2.0 - 2.0
 
 class SpotEnv(gym.Env):
@@ -85,7 +85,7 @@ class SpotEnv(gym.Env):
         if self.render_mode == "human":
             self._cleanup_graphics, viz_scene = self._mb.setupGraphics(axes=0.0, port=port, local_client='never')
             viz_scene.defaultCamera().pointCameraAt(
-                [0.0, 25.0, 15.0], [0, 0, 0,], [0, 0, 1],
+                [0.0, 15.0, 10.0], [0, 5, 0,], [0, 0, 1],
             )
             self._proxy_scene = self._mb.getScene()
         else:
@@ -178,14 +178,13 @@ class SpotEnv(gym.Env):
             self.np_random, _ = gym.utils.seeding.np_random(seed)
 
         # init vars
-        self._agent_yaw = self.np_random.uniform(-np.pi, np.pi, size=(1,)).astype(np.float32)
-        self._agent_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
+        self._agent_yaw = np.float32(0.0)
+        self._agent_pos = np.zeros(2, dtype=np.float32)
         self._prev_action = np.zeros(12, dtype=np.float32)
         
         # set sim according to vars
-        orientation = UnitQuaternion(self._agent_yaw[0], [0.0, 0.0, 1.0])
         self._root_hinge.fitQ(
-            HomTran(q=orientation, vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
+            HomTran(vec=np.zeros(3))
         )
         self._desired_pos = DEFAULT_POS
         Q = self._coorddata.getQ()

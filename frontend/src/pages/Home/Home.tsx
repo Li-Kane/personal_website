@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 
 function Home() {
   const wsRef = useRef<WebSocket | null>(null)
-  const iframeRef = useRef<HTMLIFrameElement>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
 
   // Use environment variables with fallback to localhost for local development
   const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
@@ -53,25 +53,38 @@ function Home() {
     }
   }, [WS_URL])
 
-  const handleMouseMove = (event: React.MouseEvent<HTMLIFrameElement>) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      const x = (2 * event.clientX / rect.width) - 1;
+      const y = 1 - (2 * event.clientY / rect.height);
+      const ratio = rect.width / rect.height;
+      // output the NDC coordinates to the console
       const mouseData = {
-        x: event.clientX,
-        y: event.clientY,
+        x: x,
+        y: y,
+        ratio: ratio
       }
-      console.log('Sending mouse data:', mouseData)
       wsRef.current.send(JSON.stringify(mouseData))
     }
   }
 
   return (
-    <iframe 
-      ref={iframeRef}
-      id="sim-iframe" 
-      src={SERVER_URL}
-      onMouseMove={handleMouseMove}
+    <div 
+      id="home-container" 
+      onMouseMove={handleMouseMove} 
+      ref={containerRef}
     >
-    </iframe>
+      <iframe 
+        id="sim-iframe" 
+        src={SERVER_URL}
+      >
+      </iframe>
+      <div id="overlay-text">
+        <h1 id="title-text">Kane's Website</h1>
+        <p id="subtitle-text">Aspiring Roboticist and Software Engineer</p>
+      </div>
+    </div>
   )
 }
 

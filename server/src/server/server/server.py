@@ -1,14 +1,11 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
-
-from sim_interfaces.msg import FromServer, FromSim
 import numpy as np
-import asyncio
-import websockets
-import json
 import threading
 
+from sim_interfaces.msg import FromServer, FromSim
+from server.websocket import run_websocket_server
 
 class Server(Node):
 
@@ -32,7 +29,7 @@ class Server(Node):
         # WebSocket vars
         self.mouse_x = 0
         self.mouse_y = 0
-        self.latest_mouse_timestamp = 0
+        self.ratio = 1.0
 
     def compute_command_to_target(
         self,
@@ -65,50 +62,47 @@ class Server(Node):
 
     # callback to send command to sim
     def timer_callback(self):
-        self.target_pos = np.array([-5.0, 5.0])
+        self.target_pos = self.raycast_to_ground()
+        # self.target_pos = np.array([-5.0, 5.0])
         forward_vel, _, angular_vel = self.compute_command_to_target()
         msg = FromServer()
         msg.server_data = [forward_vel, angular_vel, self.target_pos[0], self.target_pos[1]]
         self.publisher_.publish(msg)
     
-    def update_mouse_position(self, x, y, timestamp):
+    def update_mouse_position(self, x, y, ratio):
         """Update mouse position from WebSocket"""
         self.mouse_x = x
         self.mouse_y = y
-        self.get_logger().info(f'Mouse position updated: x={x}, y={y}')
+        self.ratio = ratio
 
-async def websocket_handler(websocket, server_node):
-    """Handle WebSocket connections and messages"""
-    try:
-        async for message in websocket:
-            try:
-                data = json.loads(message)
-                x = data.get('x', 0)
-                y = data.get('y', 0)
-                timestamp = data.get('timestamp', 0)
-                
-                # Update the server node with mouse data
-                server_node.update_mouse_position(x, y, timestamp)
-                
-            except json.JSONDecodeError as e:
-                print(f"Error decoding JSON: {e}")
-    except websockets.exceptions.ConnectionClosed:
-        print("WebSocket connection closed")
+    def raycast_to_ground(self):
+        """Convert mouse position to world coordinates on ground plane"""
+        # fov = 50, near = 0.1, far = 2000
+        tan_half_fov = np.tan(np.radians(50.0) / 2)
+        ray_x = self.mouse_x * self.ratio * tan_half_fov
+        ray_y = self.mouse_y * tan_half_fov
+        ray_dir = np.array([ray_x, ray_y, 1.0])
 
+        # construct basis vectors
+        # offset = [0.0, 15.0, 10.0], target = [0, 5, 0], up = [0, 0, 1]
+        forward = np.array([0.0, 5.0, 0.0]) - np.array([0.0, 15.0, 10.0])
+        forward /= np.linalg.norm(forward)
+        right = np.cross(forward, np.array([0, 0, 1]))
+        right /= np.linalg.norm(right)
+        up = np.cross(right, forward)
+        up /= np.linalg.norm(up)
 
-async def start_websocket_server(server_node, host='0.0.0.0', port=8080):
-    """Start the WebSocket server"""
-    async def handler(websocket):
-        await websocket_handler(websocket, server_node)
-    
-    async with websockets.serve(handler, host, port):
-        print(f"WebSocket server started on ws://{host}:{port}")
-        await asyncio.Future()  # run forever
+        # transform ray to world space
+        world_ray_dir = (ray_dir[0] * right +
+                         ray_dir[1] * up +
+                         ray_dir[2] * forward)
+        world_ray_dir /= np.linalg.norm(world_ray_dir)
 
-
-def run_websocket_server(server_node):
-    """Run the WebSocket server in an asyncio event loop"""
-    asyncio.run(start_websocket_server(server_node))
+        # trace ( we know the gorund is at -0.525)
+        t = ( -0.525 - 10.0 ) / world_ray_dir[2]
+        ground_x = 0.0 + t * world_ray_dir[0]
+        ground_y = 15.0 + t * world_ray_dir[1]
+        return np.array([ground_x, ground_y])
 
 def main(args=None):
     try:
