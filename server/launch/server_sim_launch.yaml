@@ -1,0 +1,11 @@
+%YAML 1.2
+---
+launch:
+  - node:
+      pkg: "server"
+      exec: "server"
+      name: "server"
+  - node:
+      pkg: "spot_sim"
+      exec: "sim_sub"
+      name: "sim"

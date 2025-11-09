@@ -11,7 +11,10 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=[
+        'setuptools',
+        'websockets',
+    ],
     zip_safe=True,
     maintainer='Kane Li',
     maintainer_email='kaneli200456@gmail.com',

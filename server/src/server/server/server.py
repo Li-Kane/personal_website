@@ -4,6 +4,10 @@ from rclpy.node import Node
 
 from sim_interfaces.msg import FromServer, FromSim
 import numpy as np
+import asyncio
+import websockets
+import json
+import threading
 
 
 class Server(Node):
@@ -24,16 +28,17 @@ class Server(Node):
         self.spot_pos = np.zeros(2)
         self.spot_yaw = 0.0
         self.target_pos = np.array([-5.0, 5.0])
+        
+        # WebSocket vars
+        self.mouse_x = 0
+        self.mouse_y = 0
+        self.latest_mouse_timestamp = 0
 
     def compute_command_to_target(
         self,
         max_forward_vel: float = 2.0,
         max_angular_vel: float = 2.0,
     ) -> np.ndarray:
-        """
-        Compute [forward, sideways, yaw_rate] command to reach target.
-        Returns: np.ndarray([f, s, y]) - robot-relative velocities
-        """
         # 1. Compute vector from robot to target (world frame)
         delta = self.target_pos - self.spot_pos
         distance = np.linalg.norm(delta)
@@ -60,15 +65,59 @@ class Server(Node):
 
     # callback to send command to sim
     def timer_callback(self):
+        self.target_pos = np.array([-5.0, 5.0])
         forward_vel, _, angular_vel = self.compute_command_to_target()
         msg = FromServer()
         msg.server_data = [forward_vel, angular_vel, self.target_pos[0], self.target_pos[1]]
         self.publisher_.publish(msg)
+    
+    def update_mouse_position(self, x, y, timestamp):
+        """Update mouse position from WebSocket"""
+        self.mouse_x = x
+        self.mouse_y = y
+        self.get_logger().info(f'Mouse position updated: x={x}, y={y}')
+
+async def websocket_handler(websocket, server_node):
+    """Handle WebSocket connections and messages"""
+    try:
+        async for message in websocket:
+            try:
+                data = json.loads(message)
+                x = data.get('x', 0)
+                y = data.get('y', 0)
+                timestamp = data.get('timestamp', 0)
+                
+                # Update the server node with mouse data
+                server_node.update_mouse_position(x, y, timestamp)
+                
+            except json.JSONDecodeError as e:
+                print(f"Error decoding JSON: {e}")
+    except websockets.exceptions.ConnectionClosed:
+        print("WebSocket connection closed")
+
+
+async def start_websocket_server(server_node, host='0.0.0.0', port=8080):
+    """Start the WebSocket server"""
+    async def handler(websocket):
+        await websocket_handler(websocket, server_node)
+    
+    async with websockets.serve(handler, host, port):
+        print(f"WebSocket server started on ws://{host}:{port}")
+        await asyncio.Future()  # run forever
+
+
+def run_websocket_server(server_node):
+    """Run the WebSocket server in an asyncio event loop"""
+    asyncio.run(start_websocket_server(server_node))
 
 def main(args=None):
     try:
         with rclpy.init(args=args):
             server = Server()
+            
+            # Start WebSocket server in a separate thread
+            # ws_thread = threading.Thread(target=run_websocket_server, args=(server,), daemon=True)
+            # ws_thread.start()
 
             rclpy.spin(server)
     except (KeyboardInterrupt, ExternalShutdownException):

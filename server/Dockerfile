@@ -30,7 +30,6 @@ RUN apt update && \
 
 # Set up kdFlex license environment variable
 ENV KARANA_LICENSE_FILE=/opt/kdflex/evaluation.license
-# ENV PATH="~/.local/bin:${PATH}"
 
 # Source ROS2 environment automatically
 RUN echo "source /opt/ros/kilted/setup.bash" >> ~/.bashrc
@@ -40,5 +39,6 @@ WORKDIR /server
 VOLUME [ "/server" ]
 
 EXPOSE 3247
-
-CMD ["/bin/bash", "-c", "exec /bin/bash"]
+EXPOSE 8080
+CMD ["/bin/bash", "-c", "cd /server && colcon build && source ./install/setup.bash && cd launch && ros2 launch server_sim_launch.yaml && exec /bin/bash"]
+# CMD ["/bin/bash", "-c", "exec /bin/bash"]
