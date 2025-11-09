@@ -168,6 +168,9 @@ class SpotEnv(gym.Env):
         self._sp.registerTimedEvent(t)
         del t
 
+    def update_target(self, position: np.ndarray):
+        self._target.setTranslation([position[0], position[1], -0.5])
+
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         super().reset(seed=seed)
         self._mb.resetData()
@@ -175,7 +178,6 @@ class SpotEnv(gym.Env):
             self.np_random, _ = gym.utils.seeding.np_random(seed)
 
         # init vars
-        self._target_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
         self._agent_yaw = self.np_random.uniform(-np.pi, np.pi, size=(1,)).astype(np.float32)
         self._agent_pos = self.np_random.uniform(-BOUND, BOUND, size=(2,))
         self._prev_action = np.zeros(12, dtype=np.float32)
@@ -185,7 +187,6 @@ class SpotEnv(gym.Env):
         self._root_hinge.fitQ(
             HomTran(q=orientation, vec=np.array([self._agent_pos[0], self._agent_pos[1], 0.0]))
         )
-        self._target.setTranslation([self._target_pos[0], self._target_pos[1], -0.5])
         self._desired_pos = DEFAULT_POS
         Q = self._coorddata.getQ()
         Q[6:] = self._desired_pos
@@ -221,14 +222,6 @@ class SpotEnv(gym.Env):
         obs[36:48] = self._prev_action
         return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
 
-    # for my simple control algorithm, I need x, y, yaw of the robot dog
-    def get_observation(self):
-        return np.array([
-            self._agent_pos[0],
-            self._agent_pos[1],
-            self._agent_yaw,
-        ])
-
     # def step(self, action: int):
     def step(self, action: np.ndarray):
         # Time observation gathering
@@ -250,6 +243,7 @@ class SpotEnv(gym.Env):
         transform = self._f2f.relTransform().toVector6()
         self._agent_pos = self._f2f.relTransform().toVector6()[3:5]
         self._agent_yaw = transform[2]
+        return  [self._agent_pos[0], self._agent_pos[1], self._agent_yaw]
 
     def close(self):
         del self._proxy_scene, self._body, self._f2f, self._root_hinge, self._coorddata, self._target
