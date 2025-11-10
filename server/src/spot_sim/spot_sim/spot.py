@@ -240,8 +240,13 @@ class SpotEnv(gym.Env):
 
         # update vars
         transform = self._f2f.relTransform().toVector6()
-        self._agent_pos = self._f2f.relTransform().toVector6()[3:5]
+        self._agent_pos = transform[3:5]
         self._agent_yaw = transform[2]
+
+        # reset if the agent falls over
+        if abs(transform[5]) > 1.0:
+            self.reset()
+            return [0.0, 0.0, 0.0]
         return  [self._agent_pos[0], self._agent_pos[1], self._agent_yaw]
 
     def close(self):

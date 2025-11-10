@@ -12,14 +12,15 @@ function Home() {
   useEffect(() => {
     let reconnectAttempts = 0;
     const maxReconnectAttempts = 10;
-    const delay = 1000;
+    const baseDelay = 1000; // Initial delay in ms
+    const maxDelay = 30000; // Maximum delay of 30 seconds
     
     const connectWebSocket = () => {
       const ws = new WebSocket(WS_URL)
       
       ws.onopen = () => {
         console.log('WebSocket connected')
-        reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+        reconnectAttempts = 0; // Reset attempts on successful connection
       }
       
       ws.onerror = (error) => {
@@ -30,10 +31,14 @@ function Home() {
         console.log('WebSocket disconnected')
         if (reconnectAttempts < maxReconnectAttempts) {
           reconnectAttempts++;
-          console.log(`Reconnecting... Attempt ${reconnectAttempts}`)
+          // Exponential backoff: delay = baseDelay * 2^(attempts - 1)
+          const exponentialDelay = Math.min(
+            baseDelay * Math.pow(2, reconnectAttempts - 1),
+            maxDelay
+          );
           setTimeout(() => {
             connectWebSocket(); // Recursively reconnect
-          }, delay);
+          }, exponentialDelay);
         } else {
           console.error('Max reconnect attempts reached. Could not reconnect to WebSocket.')
         }
