@@ -4,15 +4,15 @@ import "./layout.css";
 
 export default function AppLayout() {
   return (
-    <div id="app-layout">
-      <header id="navbar">
+    <div className="app-layout">
+      <header className="navbar">
         <nav>
           <NavLink className="nav-link" to="/">Home</NavLink>
           <NavLink className="nav-link" to="/profile">Profile</NavLink>
           <NavLink className="nav-link" to="/projects">Projects</NavLink>
         </nav>
       </header>
-      <main id="content">
+      <main className="content">
         <Outlet />
       </main>
     </div>

@@ -1,47 +1,28 @@
-# kdWidgets
-This is a project for creating server-side widgets and sending their data over websockets to connected clients. Using custom message protocols and callbacks, developers can create a dynamic GUI. More details can be found in this doc: [link](https://karanadynamics.sharepoint.com/:w:/s/RD/EacxFTOlxNNDvYLDWKgXab4BZfUlFfp8f0KgmUUUb4ehUg?e=qrHHXv)
+# setup server
+cd server/
+docker build -t server .
+docker run -it -p 3247:3247 -p 8080:8080 -v $(pwd):/server server
+docker exec -it <container> bash
 
-## Setup
-For the library itself, there are 3 dependencies:
-1. [uWebSockets](https://github.com/uNetworking/uWebSockets)
-2. [ZLIB](https://github.com/madler/zlib)
-3. [nlohmann_json](https://github.com/nlohmann/json)
+# setup frontend
+cd frontend/
+docker build -t frontend .
+docker run -p 5173:5173 -v $(pwd):/app frontend
 
-ZLIB and nlohmann_JSON are already installed, therefore just uWebSockets needs to be installed. These are the general steps I followed to clone the repository, install it, and add the relevant files to CMAKE paths.
-1. Clone the repo at https://github.com/uNetworking/uWebSockets.git (make sure to include --recurse-submodules flag to include uSockets dependency)
-2. Cd into uWebSockets and run `make`
-3. Cd into uSockets and run `make`
-4. Move uWebSockets/src into include path (uWebSockets is header-only, and all the files are in /src)
-5. Move uWebsockets/uSockets/src/libuSockets.h to include path
-6. Move uWebSockets/uSockets/uSockets.a to the search path
-7. Update src/CMakeLists.txt to find the uWebSockets headers from steps 4 and 5, as well as find the uSockets.a library.
+# delete
+docker stop $(docker ps -aq)
+docker rm $(docker ps -aq)
+docker rmi $(docker images -a -q)
 
-Once this is done, the project can be compiled and run from root:
-```
-mkdir build
-cd build
-cmake ..
-make
-```
-
-## Running
-From inside build, examples can be run like so:
-```
-./examples/chatroom
-./examples/iframe
-./examples/simulation
-./examples/widgetList
-```
-
-## Bindings
-Bindings are currently incomplete. But as a proof of concept, they are located in /bindings. This is how to do it if it was working (from root):
-```
-# create a venv
-python -m venv .venv
-source .venv/bin/activate
-pip install . -C cmake.define.BUILD_BINDINGS=true
-
-# run a minimal example
-cd python
-python ./test.py
-```
+## Setup Checklist
+1. Setup ECS
+    - Push Server container to ECR
+    - Setup task, VPC, subnets, security groups
+    - Spin up a container and allow me to see it's url in the browser 
+    - Allow me to connect to container's websocket url
+2. Setup AWS API
+    - Allow containers to be orchestrated from an API call
+    - Container warming, automatic shutdown, etc.
+    - Cloudwatch events
+3. Setup frontend
+    - Deploy frontend to call API and get URLS

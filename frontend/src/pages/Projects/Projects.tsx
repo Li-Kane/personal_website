@@ -3,9 +3,22 @@ import './Projects.css'
 function Projects() {
 
   return (
-    <h1>
-      Projects
-    </h1>
+    <div className="projects-container">
+      <div className="navbar-spacer"/>
+      <header className="projects-header">
+        <h1 className="header-title">
+          All Projects
+        </h1>
+      </header>
+      <div className="projects-content">
+        <div className="table-of-contents">
+
+        </div>
+        <div className="projects-list">
+
+        </div>
+      </div>
+    </div>
   )
 }
 

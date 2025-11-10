@@ -1,0 +1,40 @@
+.projects-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar-spacer {
+    flex: 1;
+}
+
+/* header */
+.projects-header {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.header-title {
+    color: white;
+    font-size: 3rem;
+    font-family: 'DirtyInfant';
+}
+
+/* content */
+.projects-content {
+    flex: 7;
+    display: flex;
+}
+
+.table-of-contents {
+    flex: 2;
+    font-family: 'DirtyInfant';
+}
+
+.projects-list {
+    flex: 5;
+    font-family: 'DirtyInfant';
+}

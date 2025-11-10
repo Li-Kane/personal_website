@@ -235,6 +235,11 @@ class SpotEnv(gym.Env):
         Q = self._coorddata.getQ()
         Q[6:] = DEFAULT_POS + action
         self._desired_pos = DEFAULT_POS + action
+
+        # debug: why does UDOT not get set sometimes
+        U = self._coorddata.getUdot()
+        print("UDOT:", U)
+
         # Time advanceBy
         self._sp.advanceBy(0.02)
 
