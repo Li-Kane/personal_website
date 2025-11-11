@@ -134,9 +134,9 @@ class SpotEnv(gym.Env):
 
         # Set penalty contact model parameters
         hc = HuntCrossley("hunt_crossley_contact")
-        hc.params.kp = 1e7
-        hc.params.kc = 5e6
-        hc.params.mu = 1.1
+        hc.params.kp = 1e6
+        hc.params.kc = 5e5
+        hc.params.mu = 1.0
         hc.params.n = 1.5
         hc.params.linear_region_tol = 1e-20
 
@@ -161,7 +161,7 @@ class SpotEnv(gym.Env):
         self._sp.setState(t_init, self._mb.dynamicsToState())
         self._proxy_scene.update()
 
-        # setup timed event (every 0.2 ms)
+        # setup timed event (every 0.5 ms)
         h = np.timedelta64(int(2e5), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
@@ -236,10 +236,6 @@ class SpotEnv(gym.Env):
         Q[6:] = DEFAULT_POS + action
         self._desired_pos = DEFAULT_POS + action
 
-        # debug: why does UDOT not get set sometimes
-        U = self._coorddata.getUdot()
-        print("UDOT:", U)
-
         # Time advanceBy
         self._sp.advanceBy(0.02)
 
@@ -248,8 +244,9 @@ class SpotEnv(gym.Env):
         self._agent_pos = transform[3:5]
         self._agent_yaw = transform[2]
 
-        # reset if the agent falls over
-        if abs(transform[5]) > 1.0:
+        # check for numerical instability or falling over
+        U = self._coorddata.getUdot()
+        if np.any(np.abs(U) > 1e5) or abs(transform[5]) > 0.5:
             self.reset()
             return [0.0, 0.0, 0.0]
         return  [self._agent_pos[0], self._agent_pos[1], self._agent_yaw]
