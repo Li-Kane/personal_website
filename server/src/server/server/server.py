@@ -105,17 +105,19 @@ class Server(Node):
         return np.array([ground_x, ground_y])
 
 def main(args=None):
+    rclpy.init(args=args)
     try:
-        with rclpy.init(args=args):
-            server = Server()
-            
-            # Start WebSocket server in a separate thread
-            ws_thread = threading.Thread(target=run_websocket_server, args=(server,), daemon=True)
-            ws_thread.start()
+        server = Server()
+        
+        # Start WebSocket server in a separate thread
+        ws_thread = threading.Thread(target=run_websocket_server, args=(server,), daemon=True)
+        ws_thread.start()
 
-            rclpy.spin(server)
+        rclpy.spin(server)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    finally:
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':

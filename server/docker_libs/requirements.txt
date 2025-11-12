@@ -1,0 +1,7 @@
+quantities
+pydantic
+websockets
+numpydoc
+click
+ruamel.yaml
+urchin
