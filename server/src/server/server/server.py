@@ -7,6 +7,18 @@ import threading
 from sim_interfaces.msg import FromServer, FromSim
 from server.websocket import run_websocket_server
 
+# fov = 50, near = 0.1, far = 2000
+TAN_HALF_FOV = np.tan(np.radians(50.0) / 2)
+# construct basis vectors
+# offset = [0.0, 15.0, 10.0], target = [0, 5, 0], up = [0, 0, 1]
+FORWARD = np.array([0.0, -10.0, -10.0])
+FORWARD_DIR = FORWARD / np.linalg.norm(FORWARD)
+RIGHT = np.cross(FORWARD_DIR, np.array([0, 0, 1]))
+RIGHT_DIR = RIGHT / np.linalg.norm(RIGHT)
+UP = np.cross(RIGHT_DIR, FORWARD_DIR)
+UP_DIR = UP / np.linalg.norm(UP)
+GROUND_DIST = -0.525 - 10.0 
+
 class Server(Node):
 
     def __init__(self):
@@ -63,7 +75,6 @@ class Server(Node):
     # callback to send command to sim
     def timer_callback(self):
         self.target_pos = self.raycast_to_ground()
-        # self.target_pos = np.array([-5.0, 5.0])
         forward_vel, _, angular_vel = self.compute_command_to_target()
         msg = FromServer()
         msg.server_data = [forward_vel, angular_vel, self.target_pos[0], self.target_pos[1]]
@@ -78,29 +89,19 @@ class Server(Node):
     def raycast_to_ground(self):
         """Convert mouse position to world coordinates on ground plane"""
         # fov = 50, near = 0.1, far = 2000
-        tan_half_fov = np.tan(np.radians(50.0) / 2)
-        ray_x = self.mouse_x * self.ratio * tan_half_fov
-        ray_y = self.mouse_y * tan_half_fov
+        ray_x = self.mouse_x * self.ratio * TAN_HALF_FOV
+        ray_y = self.mouse_y * TAN_HALF_FOV
         ray_dir = np.array([ray_x, ray_y, 1.0])
 
-        # construct basis vectors
-        # offset = [0.0, 15.0, 10.0], target = [0, 5, 0], up = [0, 0, 1]
-        forward = np.array([0.0, 5.0, 0.0]) - np.array([0.0, 15.0, 10.0])
-        forward /= np.linalg.norm(forward)
-        right = np.cross(forward, np.array([0, 0, 1]))
-        right /= np.linalg.norm(right)
-        up = np.cross(right, forward)
-        up /= np.linalg.norm(up)
-
         # transform ray to world space
-        world_ray_dir = (ray_dir[0] * right +
-                         ray_dir[1] * up +
-                         ray_dir[2] * forward)
+        world_ray_dir = (ray_dir[0] * RIGHT_DIR +
+                         ray_dir[1] * UP_DIR +
+                         ray_dir[2] * FORWARD_DIR)
         world_ray_dir /= np.linalg.norm(world_ray_dir)
 
         # trace ( we know the gorund is at -0.525)
-        t = ( -0.525 - 10.0 ) / world_ray_dir[2]
-        ground_x = 0.0 + t * world_ray_dir[0]
+        t = GROUND_DIST / world_ray_dir[2]
+        ground_x = t * world_ray_dir[0]
         ground_y = 15.0 + t * world_ray_dir[1]
         return np.array([ground_x, ground_y])
 
