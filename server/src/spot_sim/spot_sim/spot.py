@@ -32,7 +32,7 @@ from Karana.Scene import (
     LAYER_GRAPHICS,
 )
 from Karana.Collision import FrameCollider, HuntCrossley
-from Karana.Models import UniformGravity, UpdateProxyScene, SyncRealTime, PenaltyContact
+from Karana.Models import UniformGravity, SyncRealTime, PenaltyContact
 from Karana.Math import (
     IntegratorType,
     UnitQuaternion,
@@ -67,14 +67,6 @@ class SpotEnv():
 
         # initialize the simulation
         self.init_sim(port, sync_real_time)
-        
-        # Timing metrics
-        self.step_count = 0
-        self.total_step_time = 0.0
-        self.total_inference_time = 0.0
-        self.total_advanceby_time = 0.0
-        self.total_python_ops_time = 0.0
-        self.log_interval = 100  # Log every 100 steps
 
     def init_sim(self, port: int = 0, sync_real_time: bool = False):
         # setup bodies and scene
@@ -221,34 +213,17 @@ class SpotEnv():
 
     # def step(self, action: int):
     def step(self, action: np.ndarray):
-        step_start = time.perf_counter()
-        
-        # Time observation preparation (Python ops)
-        python_ops_start = time.perf_counter()
         observation = self.get_policy_observation(action)
-        python_ops_end = time.perf_counter()
-        
-        # Time inference
-        inference_start = time.perf_counter()
         policy_action = self._policy(observation)  # -> (12,) NumPy array
-        inference_end = time.perf_counter()
-        
-        # Time Python operations (action processing)
-        python_ops2_start = time.perf_counter()
         self._prev_action = policy_action
 
         # apply action to joints
         action = policy_to_urdf(policy_action * 0.2) # use 0.2 from isaacsim
         self._desired_pos = DEFAULT_POS + action
-        python_ops2_end = time.perf_counter()
 
-        # Time advanceBy
-        advanceby_start = time.perf_counter()
+        # advance simulation
         self._sp.advanceBy(0.02)
-        advanceby_end = time.perf_counter()
 
-        # Time final Python operations (update vars and checks)
-        python_ops3_start = time.perf_counter()
         # update values
         self._proxy_scene.update()
         transform = self._f2f.relTransform().toVector6()
@@ -259,60 +234,8 @@ class SpotEnv():
         U = self._coorddata.getUdot()
         if np.any(np.abs(U) > 1e5) or abs(transform[5]) > 0.5:
             self.reset()
-            python_ops3_end = time.perf_counter()
-            step_end = time.perf_counter()
-            
-            # Still update metrics even on reset
-            self._update_metrics(
-                step_end - step_start,
-                inference_end - inference_start,
-                advanceby_end - advanceby_start,
-                (python_ops_end - python_ops_start) + 
-                (python_ops2_end - python_ops2_start) + 
-                (python_ops3_end - python_ops3_start)
-            )
-            return [0.0, 0.0, 0.0]
-        
-        python_ops3_end = time.perf_counter()
-        step_end = time.perf_counter()
-        
-        # Update metrics
-        self._update_metrics(
-            step_end - step_start,
-            inference_end - inference_start,
-            advanceby_end - advanceby_start,
-            (python_ops_end - python_ops_start) + 
-            (python_ops2_end - python_ops2_start) + 
-            (python_ops3_end - python_ops3_start)
-        )
-        
+            return [0.0, 0.0, 0.0]    
         return [self._agent_pos[0], self._agent_pos[1], self._agent_yaw]
-    
-    def _update_metrics(self, step_time, inference_time, advanceby_time, python_ops_time):
-        """Update and log timing metrics."""
-        self.total_step_time += step_time
-        self.total_inference_time += inference_time
-        self.total_advanceby_time += advanceby_time
-        self.total_python_ops_time += python_ops_time
-        self.step_count += 1
-        
-        # Log metrics periodically
-        if self.step_count % self.log_interval == 0:
-            avg_step = self.total_step_time / self.step_count * 1000  # ms
-            avg_inference = self.total_inference_time / self.step_count * 1000  # ms
-            avg_advanceby = self.total_advanceby_time / self.step_count * 1000  # ms
-            avg_python_ops = self.total_python_ops_time / self.step_count * 1000  # ms
-            
-            inference_pct = (self.total_inference_time / self.total_step_time * 100) if self.total_step_time > 0 else 0
-            advanceby_pct = (self.total_advanceby_time / self.total_step_time * 100) if self.total_step_time > 0 else 0
-            python_ops_pct = (self.total_python_ops_time / self.total_step_time * 100) if self.total_step_time > 0 else 0
-            
-            print(f"[Spot Metrics after {self.step_count} steps]")
-            print(f"  Total step: {avg_step:.3f}ms (100%)")
-            print(f"  Inference: {avg_inference:.3f}ms ({inference_pct:.1f}%)")
-            print(f"  AdvanceBy: {avg_advanceby:.3f}ms ({advanceby_pct:.1f}%)")
-            print(f"  Python ops: {avg_python_ops:.3f}ms ({python_ops_pct:.1f}%)")
-            print(f"  Other: {avg_step - avg_inference - avg_advanceby - avg_python_ops:.3f}ms ({100 - inference_pct - advanceby_pct - python_ops_pct:.1f}%)")
 
     def close(self):
         del self._proxy_scene, self._body, self._f2f, self._root_hinge, self._coorddata, self._target

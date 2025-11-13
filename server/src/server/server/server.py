@@ -30,7 +30,7 @@ class Server(Node):
             1)
         self.subscription
         timer_period = 0.1
-        self.publisher_ = self.create_publisher(FromServer, 'from_server', 10)
+        self.publisher_ = self.create_publisher(FromServer, 'from_server', 1)
         self.timer = self.create_timer(timer_period, self.timer_callback)
         
         # init vars
