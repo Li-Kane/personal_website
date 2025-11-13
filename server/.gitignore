@@ -1,5 +1,6 @@
 # kdflex .deb and evaluation.license files
-/libs/
+evaluation.license
+kdflex-*-Linux.deb
 
 # ROS2 Specific
 build/

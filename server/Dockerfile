@@ -1,9 +1,9 @@
 FROM ros:jazzy-ros-base
 
 # Install kdFlex
-COPY libs/kdflex-*-Linux.deb /tmp/
-COPY libs/evaluation.license /opt/kdflex/evaluation.license
-COPY libs/requirements.txt /tmp/requirements.txt
+COPY docker_libs/kdflex-*-Linux.deb /tmp/
+COPY docker_libs/evaluation.license /opt/kdflex/evaluation.license
+COPY docker_libs/requirements.txt /tmp/requirements.txt
 RUN apt update && \
     apt install -y /tmp/kdflex-*-Linux.deb && \
     # Remove conflicting Debian Python packages that pip needs to upgrade
@@ -27,7 +27,7 @@ RUN apt update && \
         ros-jazzy-ros2cli \
         ros-jazzy-ros2cli-common-extensions \
     && \
-    # Clean up EVERYTHING in same layer
+    # Clean up EVERYTHING
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* \
         /tmp/*.deb \

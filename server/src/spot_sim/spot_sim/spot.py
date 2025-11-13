@@ -1,11 +1,10 @@
 import os
 from typing import Optional, cast
 import numpy as np
-import gymnasium as gym
-import torch
 from math import sqrt
 from ament_index_python.packages import get_package_share_directory
 
+from spot_sim.onnx_policy import ONNXSpotPolicy
 from spot_sim.helpers import (
     urdf_to_policy,
     policy_to_urdf,
@@ -46,7 +45,7 @@ DAMPING = 1.5
 GROUND_SIZE = 50.0
 BOUND = GROUND_SIZE / 2.0 - 2.0
 
-class SpotEnv(gym.Env):
+class SpotEnv():
     metadata = {"render_modes": ["human", "none"]}
 
     def __init__(
@@ -60,10 +59,9 @@ class SpotEnv(gym.Env):
         if render_mode and render_mode in self.metadata["render_modes"]:
             self.render_mode = render_mode
         
-        # our spot policy controller
-        policy_path = os.path.join(get_package_share_directory('spot_sim'), "resources", "spot_policy.pt")
-        self._policy = torch.jit.load(policy_path, map_location="cpu")
-        self._policy.eval()
+        # our spot policy controller 
+        onnx_path = os.path.join(get_package_share_directory('spot_sim'), "resources", "spot_policy.onnx")
+        self._policy = ONNXSpotPolicy(onnx_path)
 
         # initialize the simulation
         self.init_sim(port, sync_real_time)
@@ -171,11 +169,8 @@ class SpotEnv(gym.Env):
     def update_target(self, position: np.ndarray):
         self._target.setTranslation([position[0], position[1], -0.5])
 
-    def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
-        super().reset(seed=seed)
+    def reset(self):
         self._mb.resetData()
-        if self.np_random is None:
-            self.np_random, _ = gym.utils.seeding.np_random(seed)
 
         # init vars
         self._agent_yaw = np.float32(0.0)
@@ -219,21 +214,16 @@ class SpotEnv(gym.Env):
         obs[24:36] = U
         # 12 previous action (the raw policy output)
         obs[36:48] = self._prev_action
-        return torch.as_tensor(obs, dtype=torch.float32).view(1, -1)
+        return obs.astype(np.float32) 
 
     # def step(self, action: int):
     def step(self, action: np.ndarray):
-        # Time observation gathering
         observation = self.get_policy_observation(action)
-        with torch.inference_mode():
-            policy_action = self._policy(observation)  # -> (1, 12)
-        policy_action = policy_action.squeeze(0).cpu().numpy()
+        policy_action = self._policy(observation)  # -> (12,) NumPy array
         self._prev_action = policy_action
 
         # apply action to joints
         action = policy_to_urdf(policy_action * 0.2) # use 0.2 from isaacsim
-        Q = self._coorddata.getQ()
-        Q[6:] = DEFAULT_POS + action
         self._desired_pos = DEFAULT_POS + action
 
         # Time advanceBy

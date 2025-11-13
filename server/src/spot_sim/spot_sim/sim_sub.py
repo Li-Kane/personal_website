@@ -35,13 +35,14 @@ class SimSubscriber(Node):
         self.publisher.publish(msg)
 
 def main(args=None):
+    rclpy.init(args=args)
     try:
-        with rclpy.init(args=args):
-            sim_subscriber = SimSubscriber()
-
-            rclpy.spin(sim_subscriber)
+        sim_subscriber = SimSubscriber()
+        rclpy.spin(sim_subscriber)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    finally:
+        rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

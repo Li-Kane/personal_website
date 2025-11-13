@@ -1,0 +1,18 @@
+# kdflex
+numpy
+numpydoc
+pandas
+pydantic
+pyNastran
+quantities
+ruamel.yaml
+scipy
+urchin
+dash
+dash_extensions
+fastapi
+uvicorn
+
+# non kd-flex
+websockets
+onnxruntime
