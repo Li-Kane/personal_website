@@ -324,3 +324,65 @@ Lessen contact parms
   Python ops: 0.326ms (2.0%)
   Other: 0.002ms (0.0%)
 [INFO] [1763074782.970925599] [sim_subscriber]: [Metrics after 2000 steps] Avg step: 16.166ms, Avg publish: 0.068ms, Publish/Step ratio: 0.42%
+
+
+## Server
+[Server Performance Metrics]
+  Listener callback (last 1 calls):
+    Avg: 0.006ms
+    Min: 0.006ms
+    Max: 0.006ms
+    Total calls: 1
+  Timer callback (last 100 calls):
+    Avg: 0.552ms
+    Min: 0.154ms
+    Max: 0.902ms
+    Total calls: 1395
+[INFO] [1763080126.236568635] [server]: 
+[Server Performance Metrics]
+  Listener callback (last 100 calls):
+    Avg: 0.008ms
+    Min: 0.004ms
+    Max: 0.028ms
+    Total calls: 314
+  Timer callback (last 100 calls):
+    Avg: 0.216ms
+    Min: 0.115ms
+    Max: 0.703ms
+    Total calls: 1495
+[INFO] [1763080136.247663928] [server]: 
+[Server Performance Metrics]
+  Listener callback (last 100 calls):
+    Avg: 0.009ms
+    Min: 0.003ms
+    Max: 0.056ms
+    Total calls: 638
+  Timer callback (last 100 calls):
+    Avg: 0.225ms
+    Min: 0.142ms
+    Max: 0.648ms
+    Total calls: 1595
+[INFO] [1763080146.258011393] [server]: 
+[Server Performance Metrics]
+  Listener callback (last 100 calls):
+    Avg: 0.009ms
+    Min: 0.004ms
+    Max: 0.069ms
+    Total calls: 966
+  Timer callback (last 100 calls):
+    Avg: 0.276ms
+    Min: 0.129ms
+    Max: 0.913ms
+    Total calls: 1695
+[INFO] [1763080156.277259603] [server]: 
+[Server Performance Metrics]
+  Listener callback (last 100 calls):
+    Avg: 0.008ms
+    Min: 0.004ms
+    Max: 0.037ms
+    Total calls: 1291
+  Timer callback (last 100 calls):
+    Avg: 0.266ms
+    Min: 0.129ms
+    Max: 0.677ms
+    Total calls: 1795
