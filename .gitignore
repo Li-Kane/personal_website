@@ -208,3 +208,5 @@ __marimo__/
 
 # custom
 .vscode/
+evaluation.license
+kdflex-*-Linux.deb

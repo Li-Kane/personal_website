@@ -1,12 +1,16 @@
+"""
+Spot simulation environment without ROS2 dependencies.
+Standalone version for single-threaded operation.
+"""
+
 import os
 from typing import Optional, cast
 import numpy as np
 from math import sqrt
-from ament_index_python.packages import get_package_share_directory
-import time
+from pathlib import Path
 
-from spot_sim.onnx_policy import ONNXSpotPolicy
-from spot_sim.helpers import (
+from onnx_policy import ONNXSpotPolicy
+from helpers import (
     urdf_to_policy,
     policy_to_urdf,
     createMbody,
@@ -46,7 +50,10 @@ DAMPING = 1.5
 GROUND_SIZE = 50.0
 BOUND = GROUND_SIZE / 2.0 - 2.0
 
+
 class SpotEnv():
+    """Spot robot simulation environment."""
+    
     metadata = {"render_modes": ["human", "none"]}
 
     def __init__(
@@ -60,20 +67,27 @@ class SpotEnv():
         if render_mode and render_mode in self.metadata["render_modes"]:
             self.render_mode = render_mode
         
-        # our spot policy controller 
-        onnx_path = os.path.join(get_package_share_directory('spot_sim'), "resources", "spot_policy.onnx")
+        # Get assets directory (relative to this file)
+        assets_dir = os.path.join(os.path.dirname(__file__), "..", "assets")
+        
+        # Load spot policy controller 
+        onnx_path = os.path.join(assets_dir, "spot_policy.onnx")
         self._policy = ONNXSpotPolicy(onnx_path)
         self.obs = np.zeros(48)
 
-        # initialize the simulation
+        # Store assets directory for helpers
+        self.assets_dir = assets_dir
+
+        # Initialize the simulation
         self.init_sim(port, sync_real_time)
 
     def init_sim(self, port: int = 0, sync_real_time: bool = False):
-        # setup bodies and scene
+        """Initialize simulation components."""
+        # Setup bodies and scene
         self._fc = FrameContainer("root")
-        self._mb = createMbody(self._fc)
+        self._mb = createMbody(self._fc, self.assets_dir)
 
-        # attach a frame2frame to the spot base
+        # Attach a frame2frame to the spot base
         self._body = cast(PhysicalBody, self._mb.getBody("body"))
         self._f2f = cast(PhysicalBody, self._mb.getNewtonianFrame()).frame2Frame(
             self._body
@@ -81,17 +95,17 @@ class SpotEnv():
         self._root_hinge = cast(PhysicalHinge, self._body.parentHinge())
         self._coorddata = self._mb.subhingeCoordData()
 
-        # setup graphics if enabled
+        # Setup graphics if enabled
         if self.render_mode == "human":
             self._cleanup_graphics, viz_scene = self._mb.setupGraphics(axes=0.0, port=port, local_client='never')
             viz_scene.defaultCamera().pointCameraAt(
-                [0.0, 15.0, 10.0], [0, 5, 0,], [0, 0, 1],
+                [0.0, 15.0, 10.0], [0, 5, 0], [0, 0, 1],
             )
             self._proxy_scene = self._mb.getScene()
         else:
             self._proxy_scene = ProxyScene(f"{self._mb.name()}_proxyscene", self._mb.virtualRoot())
 
-        # setup a target object for the robot to follow
+        # Setup a target object for the robot to follow
         mat_info = PhysicalMaterialInfo()
         mat_info.color = Color.RED
         red = PhysicalMaterial(mat_info)
@@ -106,24 +120,20 @@ class SpotEnv():
         self._target.setUnitQuaternion(UnitQuaternion([1 / sqrt(2), 0, 0, 1 / sqrt(2)]))
         self._target.setTranslation(np.array([0.0, 0.0, -0.5]))
 
-        # create the environment
-        createEnvironment(GROUND_SIZE, self._proxy_scene)
+        # Create the environment
+        createEnvironment(GROUND_SIZE, self._proxy_scene, self.assets_dir)
 
-        # setup collision client
+        # Setup collision client
         col_scene = CoalScene("collision_scene")
         self._proxy_scene.registerClientScene(
             col_scene, self._mb.virtualRoot(), layers=LAYER_COLLISION
         )
 
-        # setup state propagator and models
+        # Setup state propagator and models
         self._sp = StatePropagator(self._mb, integrator_type=IntegratorType.EULER)
         sp_opts = self._sp.getOptions()
 
-        # for visualization
-        # if sync_real_time:
-        #     self._sp.registerModel(SyncRealTime("sync_real_time", 1.0))
-
-        # gravity model
+        # Gravity model
         ug = UniformGravity("grav_model", self._mb)
         ug.params.g = np.array([0, 0, -9.81])
         self._sp.registerModel(ug)
@@ -137,12 +147,12 @@ class SpotEnv():
         hc.params.n = 1.5
         hc.params.linear_region_tol = 1e-40
 
-        # collision model
+        # Collision model
         mdl = PenaltyContact("penalty_contact", self._mb, [FrameCollider(self._proxy_scene, col_scene)], hc)
         self._sp.registerModel(mdl)
         del mdl
 
-        # define the apply forces function
+        # Define the apply forces function
         def apply_forces(t, x):
             Q = self._coorddata.getQ()[6:]
             U = self._coorddata.getU()[6:]
@@ -153,11 +163,11 @@ class SpotEnv():
             self._coorddata.setT(T)
         sp_opts.fns.pre_deriv_fns["apply_forces"] = apply_forces
 
-        # simulation
+        # Simulation
         t_init = np.timedelta64(0, "ns")
         self._sp.setState(t_init, self._mb.dynamicsToState())
 
-        # setup physics timed event (every 0.2 ms)
+        # Setup physics timed event (every 0.2 ms)
         h = np.timedelta64(int(2e5), "ns")
         t = TimedEvent("hop_size", h, lambda _: None, False)
         t.period = h
@@ -165,17 +175,19 @@ class SpotEnv():
         del t
 
     def update_target(self, position: np.ndarray):
+        """Update target position for the robot."""
         self._target.setTranslation([position[0], position[1], -0.5])
 
     def reset(self):
+        """Reset the simulation to initial state."""
         self._mb.resetData()
 
-        # init vars
+        # Init vars
         self._agent_yaw = np.float32(0.0)
         self._agent_pos = np.zeros(2, dtype=np.float32)
         self._prev_action = np.zeros(12, dtype=np.float32)
         
-        # set sim according to vars
+        # Set sim according to vars
         self._root_hinge.fitQ(
             HomTran(vec=np.zeros(3))
         )
@@ -184,14 +196,14 @@ class SpotEnv():
         Q[6:] = self._desired_pos
         self._coorddata.setQ(Q)
 
-        # simulation
+        # Simulation
         t_init = np.timedelta64(0, "ns")
         self._sp.setState(t_init, self._mb.dynamicsToState())
         self._proxy_scene.update()
         self._sp.advanceBy(0.01)
 
-    # create a (48,) array to feed into the spot policy
     def get_policy_observation(self, action: np.ndarray):
+        """Create a (48,) array to feed into the spot policy."""
         wsp_vel = self._f2f.relSpVel().toVector6()
         transform = self._f2f.relTransform().getMatrix()[:3, :3].transpose()
         # 3 base_lin_vel
@@ -211,26 +223,34 @@ class SpotEnv():
         self.obs[36:48] = self._prev_action
         return self.obs.astype(np.float32) 
 
-    # def step(self, action: int):
     def step(self, action: np.ndarray):
+        """
+        Step the simulation forward.
+        
+        Args:
+            action: 3D velocity command [forward_vel, sideways_vel, angular_vel]
+        
+        Returns:
+            [x_pos, y_pos, yaw] - current robot position and orientation
+        """
         observation = self.get_policy_observation(action)
         policy_action = self._policy(observation)  # -> (12,) NumPy array
         self._prev_action = policy_action
 
-        # apply action to joints
-        action = policy_to_urdf(policy_action * 0.2) # use 0.2 from isaacsim
-        self._desired_pos = DEFAULT_POS + action
+        # Apply action to joints
+        action_scaled = policy_to_urdf(policy_action * 0.2)  # use 0.2 from isaacsim
+        self._desired_pos = DEFAULT_POS + action_scaled
 
-        # advance simulation
+        # Advance simulation
         self._sp.advanceBy(0.02)
 
-        # update values
+        # Update values
         self._proxy_scene.update()
         transform = self._f2f.relTransform().toVector6()
         self._agent_pos = transform[3:5]
         self._agent_yaw = transform[2]
 
-        # check for numerical instability or falling over
+        # Check for numerical instability or falling over
         U = self._coorddata.getUdot()
         if np.any(np.abs(U) > 1e5) or abs(transform[5]) > 0.5:
             self.reset()
@@ -238,6 +258,7 @@ class SpotEnv():
         return [self._agent_pos[0], self._agent_pos[1], self._agent_yaw]
 
     def close(self):
+        """Clean up simulation resources."""
         del self._proxy_scene, self._body, self._f2f, self._root_hinge, self._coorddata, self._target
         discard(self._sp)
         if self.render_mode == "human":

@@ -4,6 +4,12 @@ docker build -t server .
 docker run -it -p 3247:3247 -p 8080:8080 -v $(pwd):/server server
 docker exec -it <container> bash
 
+# new server
+cd server/
+docker build -t new_server .
+docker run -it -p 3247:3247 -p 8080:8080 -v $(pwd):/server server
+docker exec -it <container> bash
+
 # setup frontend
 cd frontend/
 docker build -t frontend .

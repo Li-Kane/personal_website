@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from pathlib import Path
 from collections import deque
@@ -37,8 +38,9 @@ def policy_to_urdf(arr: np.ndarray) -> np.ndarray:
     Works with shape (12,) or (..., 12)."""
     return np.take(arr, POLICY_TO_URDF, axis=-1)
 
-def createMbody(fc: FrameContainer) -> Multibody:
-    urdf_file = Path(__file__).parent / "assets" / "spot_simple.urdf"
+def createMbody(fc: FrameContainer, assets_dir: str) -> Multibody:
+    urdf_path = os.path.join(assets_dir, "spot_simple.urdf")
+    urdf_file = Path(urdf_path)
     multibody_info = MultibodyDS.fromUrdf(urdf_file)
     # convert to full6DOF hinge between root frame and spot base
     multibody_info.base_bodies[0].body.hinge = HingeDS(
@@ -82,12 +84,12 @@ def createMbody(fc: FrameContainer) -> Multibody:
 
 
 def createEnvironment(
-    size: int, proxy_scene: ProxyScene
+    size: int, proxy_scene: ProxyScene, assets_dir: str
 ):
     mat_info = PhysicalMaterialInfo()
     mat_info.color = Color.fromHex("0d1440")
-    texture_file = Path(__file__).parent / "assets" / "whitegrid.png"
-    mat_info.colorMap = Texture.lookupOrCreateTexture(str(texture_file))
+    texture_path = os.path.join(assets_dir, "whitegrid.png")
+    mat_info.colorMap = Texture.lookupOrCreateTexture(texture_path)
     ground_mat = PhysicalMaterial(mat_info)
     ground_geom = BoxGeometry(size, size, 0.25)
     ground = ProxyScenePart(
