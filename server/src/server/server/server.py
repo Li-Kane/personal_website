@@ -4,6 +4,8 @@ from rclpy.node import Node
 import numpy as np
 import threading
 
+# ros2 boolean msg type
+from std_msgs.msg import Bool
 from sim_interfaces.msg import FromServer, FromSim
 from server.websocket import run_websocket_server
 
@@ -31,6 +33,7 @@ class Server(Node):
         self.subscription
         timer_period = 0.1
         self.publisher_ = self.create_publisher(FromServer, 'from_server', 1)
+        self.status_publisher_ = self.create_publisher(Bool, 'server_status', 5)
         self.timer = self.create_timer(timer_period, self.timer_callback)
         
         # init vars
@@ -85,6 +88,12 @@ class Server(Node):
         self.mouse_x = x
         self.mouse_y = y
         self.ratio = ratio
+
+    def update_ws_status(self, status_msg):
+        """Update WebSocket status message so we know to open or close the sim"""
+        status_msg_ros = Bool()
+        status_msg_ros.data = status_msg
+        self.status_publisher_.publish(status_msg_ros)
 
     def raycast_to_ground(self):
         """Convert mouse position to world coordinates on ground plane"""

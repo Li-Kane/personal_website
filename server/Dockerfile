@@ -1,9 +1,9 @@
 FROM ros:jazzy-ros-base
 
 # Install kdFlex
-COPY docker_libs/kdflex-*-Linux.deb /tmp/
-COPY docker_libs/evaluation.license /opt/kdflex/evaluation.license
-COPY docker_libs/requirements.txt /tmp/requirements.txt
+COPY docker_files/kdflex-*-Linux.deb /tmp/
+COPY docker_files/evaluation.license /opt/kdflex/evaluation.license
+COPY docker_files/requirements.txt /tmp/requirements.txt
 RUN apt update && \
     apt install -y /tmp/kdflex-*-Linux.deb && \
     # Remove conflicting Debian Python packages that pip needs to upgrade
@@ -48,4 +48,4 @@ COPY ./launch /server/launch
 
 # source ROS2 and the workspace
 WORKDIR /server
-CMD ["/bin/bash", "-c", "source /opt/ros/jazzy/setup.bash && source ./install/setup.bash && cd launch && ros2 launch server_sim_launch.yaml"]
+CMD ["/bin/bash", "-c", "source /opt/ros/jazzy/setup.bash && source ./install/setup.bash && cd launch && ros2 launch server_sim_launch.yaml && exec bash"]
