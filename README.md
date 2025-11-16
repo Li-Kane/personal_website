@@ -1,13 +1,9 @@
 # setup server
-cd server/
+1. Add evaluation.license and a kdflex-0.9.19-Linux.deb to server/docker_files
+2. cd into server and run
 docker build -t server .
 docker run -p 3247:3247 -p 8080:8080 server
 docker exec -it <container> bash
-
-# setup frontend
-cd frontend/
-docker build -t frontend .
-docker run -p 5173:5173 -v $(pwd):/app frontend
 
 # delete
 docker stop $(docker ps -aq)
