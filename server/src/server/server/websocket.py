@@ -75,7 +75,7 @@ async def websocket_handler(websocket, server_node):
             queue.append(websocket)
             await websocket.send(json.dumps({
                 "status": "Queued",
-                "queue_position": len(queue)
+                "queue_position": queue.index(websocket) + 1
             }))
         else:
             server_node.update_ws_status(True)
