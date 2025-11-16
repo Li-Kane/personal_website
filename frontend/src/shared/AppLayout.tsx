@@ -1,20 +1,19 @@
 // shared/AppLayout.tsx
-import { Outlet, NavLink } from "react-router";
+import { Outlet } from "react-router";
+import { WebSocketProvider } from "./WebSocketContext";
 import "./layout.css";
+import Navbar from "./Navbar";
 
 export default function AppLayout() {
+
   return (
-    <div className="app-layout">
-      <header className="navbar">
-        <nav>
-          <NavLink className="nav-link" to="/">Home</NavLink>
-          <NavLink className="nav-link" to="/profile">Profile</NavLink>
-          <NavLink className="nav-link" to="/projects">Projects</NavLink>
-        </nav>
-      </header>
-      <main className="content">
-        <Outlet />
-      </main>
-    </div>
+    <WebSocketProvider>
+      <div className="app-layout">
+        <Navbar />
+        <main className="content">
+          <Outlet />
+        </main>
+      </div>
+    </WebSocketProvider>
   );
 }

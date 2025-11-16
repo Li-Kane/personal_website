@@ -20,7 +20,7 @@ class SimSubscriber(Node):
         self.subscription  # prevent unused variable warning
         self.status_subscriber = self.create_subscription(
             Bool,
-            'server_status',
+            'server_in_use',
             self.status_callback,
             5)
         self.status_subscriber  # prevent unused variable warning
@@ -29,30 +29,28 @@ class SimSubscriber(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         
         # init vars
-        self.sim = SpotEnv(port=3247, render_mode="human")
-        self.sim.reset()
+        self.sim = None
         self.action = np.zeros(3)
         self.spot_pos = np.zeros(3)
 
     def status_callback(self, msg):
-        pass
-        # if msg.data:
-        #     self.sim = SpotEnv(port=3247, render_mode="human")
-        #     self.sim.reset()
-        # else:
-        #     self.sim.close()
-        #     self.sim = None
+        if msg.data:
+            self.sim = SpotEnv(port=3247, render_mode="human")
+            self.sim.reset()
+        else:
+            self.sim.close()
+            self.sim = None
 
     def listener_callback(self, msg):
-        # if self.sim:
-        self.action = np.array([msg.server_data[0], 0.0, msg.server_data[1]])
-        self.sim.update_target(np.array([msg.server_data[2], msg.server_data[3]]))
+        if self.sim is not None:
+            self.action = np.array([msg.server_data[0], 0.0, msg.server_data[1]])
+            self.sim.update_target(np.array([msg.server_data[2], msg.server_data[3]]))
 
     def timer_callback(self):
-        # if self.sim:
-        msg = FromSim()
-        msg.sim_data = self.sim.step(self.action)
-        self.publisher.publish(msg)
+        if self.sim is not None:
+            msg = FromSim()
+            msg.sim_data = self.sim.step(self.action)
+            self.publisher.publish(msg)
         
 def main(args=None):
     rclpy.init(args=args)

@@ -12,7 +12,7 @@ last_activity_time = None
 idle_timeout = 60.0  # seconds of inactivity before disconnecting
 connection_lock = asyncio.Lock()
 
-async def check_idle_timeout():
+async def check_idle_timeout(server_node):
     """Background task to check for idle timeout and disconnect inactive clients"""
     global active_connection, last_activity_time
     
@@ -29,9 +29,9 @@ async def check_idle_timeout():
                     except Exception as e:
                         print(f"Error closing idle connection: {e}")
                     
-                    await promote_next_client()
+                    await promote_next_client(server_node)
 
-async def promote_next_client():
+async def promote_next_client(server_node):
     """Reset active connection and promote next client from queue if available"""
     global active_connection, last_activity_time, queue
     
@@ -47,6 +47,9 @@ async def promote_next_client():
         }))
         # Broadcast updated positions to remaining queued clients
         await broadcast_queue_positions()
+    else:
+        # if there are no queued clients, inform server node to close sim
+        server_node.update_ws_status(False)
 
 async def broadcast_queue_positions():
     """Send updated queue positions to all queued clients"""
@@ -55,7 +58,7 @@ async def broadcast_queue_positions():
         try:
             await ws.send(json.dumps({
                 "status": "Queued",
-                "queue_position": queue.index(ws) + 1
+                "queue_position": i + 1
             }))
         except Exception as e:
             print(f"Error broadcasting to queued client: {e}")
@@ -73,9 +76,10 @@ async def websocket_handler(websocket, server_node):
             queue.append(websocket)
             await websocket.send(json.dumps({
                 "status": "Queued",
-                "queue_position": queue.index(websocket) + 1
+                "queue_position": len(queue) + 1
             }))
         else:
+            server_node.update_ws_status(True)
             await websocket.send(json.dumps({
                 "status": "Connected"
             }))
@@ -107,10 +111,11 @@ async def websocket_handler(websocket, server_node):
         # Clean up when connection closes
         async with connection_lock:
             if active_connection == websocket:
-                await promote_next_client()
+                await promote_next_client(server_node)
             else:
                 # Remove from queue and update all remaining queue positions
-                queue.remove(websocket)
+                if websocket in queue:
+                    queue.remove(websocket)
                 await broadcast_queue_positions()
 
 
@@ -120,7 +125,7 @@ async def start_websocket_server(server_node, host='0.0.0.0', port=8080):
         await websocket_handler(websocket, server_node)
     
     # Start the idle timeout checker as a background task
-    asyncio.create_task(check_idle_timeout())
+    asyncio.create_task(check_idle_timeout(server_node))
     
     async with websockets.serve(handler, host, port):
         print(f"WebSockets server started on ws://{host}:{port}")
