@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 
 interface Connection {
-  status: 'Loading' | 'Connected' | 'Queued' | 'Disconnected'
+  status: 'Connected' | 'Queued' | 'Disconnected'
   queue_position?: number
+  message?: string
 }
 
 interface WebSocketContextType {
@@ -27,7 +28,7 @@ interface WebSocketProviderProps {
 
 export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const ws = useRef<WebSocket | null>(null)
-  const [connectionStatus, setConnectionStatus] = useState<Connection>({ status: 'Loading' })
+  const [connectionStatus, setConnectionStatus] = useState<Connection>({ status: 'Disconnected' })
 
   const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
 
@@ -50,12 +51,11 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     
     ws.current.onerror = (error) => {
       console.error('WebSocket error:', error)
-      setConnectionStatus({ status: 'Disconnected' })
+      setConnectionStatus({ status: 'Disconnected', message: 'WebSocket error' })
     }
     
-    ws.current.onclose = () => {
-      console.log('WebSocket disconnected')
-      setConnectionStatus({ status: 'Disconnected' })
+    ws.current.onclose = (event) => {
+      setConnectionStatus({ status: 'Disconnected', message: event.reason || 'Connection closed' })
     }
 
     return () => {

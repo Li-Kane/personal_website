@@ -25,7 +25,7 @@ function Home() {
     }
   }
 
-  if (connectionStatus.status === 'Loading') {
+  if (false) {
     return (
       <div className="loading-container">
         <p className="loading-text">Connecting to server...</p>

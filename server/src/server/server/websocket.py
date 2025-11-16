@@ -23,7 +23,6 @@ async def check_idle_timeout(server_node):
             if active_connection is not None and last_activity_time is not None:
                 idle_time = time.time() - last_activity_time
                 if idle_time > idle_timeout:
-                    print(f"Connection idle for {idle_time:.1f}s, disconnecting...")
                     try:
                         await active_connection.close(1000, "Idle timeout")
                     except Exception as e:
@@ -48,7 +47,7 @@ async def promote_next_client(server_node):
         # Broadcast updated positions to remaining queued clients
         await broadcast_queue_positions()
     else:
-        # if there are no queued clients, inform server node to close sim
+        # if there are no queued clients, inform server node to pause sim
         server_node.update_ws_status(False)
 
 async def broadcast_queue_positions():
@@ -76,7 +75,7 @@ async def websocket_handler(websocket, server_node):
             queue.append(websocket)
             await websocket.send(json.dumps({
                 "status": "Queued",
-                "queue_position": len(queue) + 1
+                "queue_position": len(queue)
             }))
         else:
             server_node.update_ws_status(True)

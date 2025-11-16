@@ -29,25 +29,22 @@ class SimSubscriber(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         
         # init vars
-        self.sim = None
+        self.sim = SpotEnv(port=3247, render_mode="human")
+        self.running = False
         self.action = np.zeros(3)
         self.spot_pos = np.zeros(3)
 
     def status_callback(self, msg):
-        if msg.data:
-            self.sim = SpotEnv(port=3247, render_mode="human")
-            self.sim.reset()
-        else:
-            self.sim.close()
-            self.sim = None
+        self.sim.reset()
+        self.running = msg.data
 
     def listener_callback(self, msg):
-        if self.sim is not None:
+        if self.running:
             self.action = np.array([msg.server_data[0], 0.0, msg.server_data[1]])
             self.sim.update_target(np.array([msg.server_data[2], msg.server_data[3]]))
 
     def timer_callback(self):
-        if self.sim is not None:
+        if self.running:
             msg = FromSim()
             msg.sim_data = self.sim.step(self.action)
             self.publisher.publish(msg)
