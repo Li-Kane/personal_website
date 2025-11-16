@@ -1,9 +1,11 @@
 # setup server
 1. Add evaluation.license and a kdflex-0.9.19-Linux.deb to server/docker_files
 2. cd into server and run
-docker build -t server .
-docker run -p 3247:3247 -p 8080:8080 server
+docker build -t likane0136/personal_websie_server:latest .
+docker run -p 3247:3247 -p 8080:8080 likane0136/personal_websie_server:latest 
 docker exec -it <container> bash
+3. upload to a docker registry (to pull on EC2)
+docker push likane0136/personal_websie_server:latest
 
 # delete
 docker stop $(docker ps -aq)

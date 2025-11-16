@@ -9,7 +9,7 @@ import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter basename="/personal_website">
+    <BrowserRouter basename="/">
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />

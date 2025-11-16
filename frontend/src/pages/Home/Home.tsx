@@ -7,7 +7,7 @@ function Home() {
   const { ws, connectionStatus } = useWebSocket()
 
   // Use environment variables with fallback to localhost for local development
-  const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3247'
+  const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://54.183.198.66:3247/'
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
     if (ws && ws.readyState === WebSocket.OPEN && containerRef.current && connectionStatus.status === 'Connected') {

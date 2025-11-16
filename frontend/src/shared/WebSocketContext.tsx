@@ -30,7 +30,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const ws = useRef<WebSocket | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<Connection>({ status: 'Disconnected' })
 
-  const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
+  const WS_URL = import.meta.env.VITE_WS_URL || 'ws://54.183.198.66:8080'
 
   useEffect(() => {
     ws.current = new WebSocket(WS_URL)
