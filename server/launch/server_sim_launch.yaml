@@ -1,0 +1,15 @@
+%YAML 1.2
+---
+launch:
+  - node:
+      pkg: "server"
+      exec: "server"
+      name: "server"        
+      respawn: "true"
+      respawn_delay: 2.0
+  - node:
+      pkg: "spot_sim"
+      exec: "sim_sub"
+      name: "sim"
+      respawn: "true"
+      respawn_delay: 2.0
