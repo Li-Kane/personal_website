@@ -23,6 +23,4 @@ EXPOSE 3247 8080
 
 # source ROS2 and the workspace
 WORKDIR /server
-COPY src/ /server/src/
-COPY assets/ /server/assets/ 
-CMD ["/bin/bash", "-c", "python3 src/server.py"]
+CMD ["/bin/bash", "-c", "source /opt/ros/jazzy/setup.bash && source ./install/setup.bash && cd launch && ros2 launch server_sim_launch.yaml && exec bash"]
