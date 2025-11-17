@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { useWebSocket } from '../../shared/WebSocketContext'
+import { useWebSocket } from './WebSocketContext'
 import { useLocation } from 'react-router'
 
 interface KaranaViewerProps {

@@ -3,7 +3,7 @@ import { Outlet } from "react-router";
 import { WebSocketProvider } from "./WebSocketContext";
 import "./layout.css";
 import Navbar from "./Navbar";
-import KaranaViewer from "../pages/Home/KaranaViewer";
+import KaranaViewer from "./KaranaViewer";
 
 export default function AppLayout() {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
