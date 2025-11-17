@@ -15,15 +15,16 @@
     color: white;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
     font-family: 'DirtyInfant';
+    z-index: 999;
 }
 
 .title-text {
-    font-size: 7rem;
+    font-size: calc(3vw + 2rem);
     margin-bottom: 0px;
 }
 
 .subtitle-text {
-    font-size: 4rem;
+    font-size: calc(1.5vw + 1rem);
 }
 
 .logo {
@@ -41,4 +42,10 @@
     transition: opacity 0.1s ease-in-out;
     width: 100px;
     height: auto;
+}
+
+@media (max-width: 600px) {
+    .logo {
+        display: none;
+    }
 }
