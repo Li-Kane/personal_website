@@ -30,7 +30,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const ws = useRef<WebSocket | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<Connection>({ status: 'Disconnected' })
 
-  const WS_URL = import.meta.env.VITE_WS_URL || 'ws://54.183.198.66:8080'
+  const WS_URL = import.meta.env.VITE_WS_URL
 
   useEffect(() => {
     ws.current = new WebSocket(WS_URL)
@@ -41,7 +41,6 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
     
     ws.current.onmessage = (event) => {
       const message = JSON.parse(event.data)
-      console.log('WebSocket message received:', message)
       if (message.status === 'Queued') {
         setConnectionStatus({ status: 'Queued', queue_position: message.queue_position })
       } else if (message.status === 'Connected') {
