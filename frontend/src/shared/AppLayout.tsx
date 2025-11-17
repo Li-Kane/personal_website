@@ -3,14 +3,20 @@ import { Outlet } from "react-router";
 import { WebSocketProvider } from "./WebSocketContext";
 import "./layout.css";
 import Navbar from "./Navbar";
+import KaranaViewer from "../pages/Home/KaranaViewer";
 
 export default function AppLayout() {
+  const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
   return (
     <WebSocketProvider>
       <div className="app-layout">
         <Navbar />
         <main className="content">
+          <KaranaViewer 
+            serverUrl={SERVER_URL}
+            className="sim-viewer"
+          />
           <Outlet />
         </main>
       </div>
