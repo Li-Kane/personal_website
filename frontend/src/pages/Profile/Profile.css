@@ -1,49 +1,93 @@
+.icon {
+    cursor: pointer;
+    height: 50px;
+    margin: 0 1rem;
+    transition: transform 0.2s;
+    width: 50px;
+}
+
+.icon:hover {
+    transform: scale(1.2);
+}
+
+.img-container {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+}
+
+.personal-content {
+    min-height: 50vh;
+    width: 100%;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.personal-description {
+    font-size: var(--text-size-md-responsive);
+    max-width: 60%;
+    text-align: center;
+}
+
+.personal-img {
+    width: 50%;
+    border-radius: 1rem;
+}
+
 .profile-container {
     display: flex;
     flex-direction: column;
 }
 
 .profile-content {
-    min-height: 75vh;
     display: flex;
+    min-height: 75vh;
+}
+
+.profile-description {
+    font-size: var(--text-size-md-responsive);
+    max-width: 80%;
+    text-align: center;
+}
+
+.profile-img {
+    border-radius: 5%;
+    height: auto;
+    max-height: 100%;
+    width: 80%;
+}
+
+.profile-text {
+    align-items: center;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .read-more-container {
-    min-height: 15vh;
-    display: flex;
-    justify-content: center;
     align-items: center;
+    display: flex;
+    min-height: 15vh;
+    justify-content: center;
 }
 
 .read-more-container .icon {
     animation: bounce 2s ease-in-out infinite;
 }
 
-.technical-content {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 2rem;
-}
-
 .section-title {
     font-size: var(--text-size-xl);
-    margin-bottom: 2rem;
     text-align: center;
 }
 
-.skills-boxes {
-    display: flex;
-    gap: 2rem;
-    width: 100%;
-    margin-bottom: 3rem;
-}
-
 .skill-box {
-    flex: 1;
     background-color: #2a2a2a;
     border-radius: 10px;
+    flex: 1;
     padding: 2rem;
     text-align: center;
     transition: transform 0.3s;
@@ -58,28 +102,40 @@
     margin: 0 0 1rem 0;
 }
 
-.skill-img {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    object-fit: cover;
-    margin: 1rem 0;
-    border-radius: 8px;
-}
-
 .skill-description {
-    font-size: var(--text-size-md-responsive);
     color: #b0b0b0;
+    font-size: var(--text-size-md);
     line-height: 1.6;
     margin-top: 1rem;
 }
 
-.skills-carousel {
+.skill-img {
+    aspect-ratio: 4 / 3;
+    border-radius: 8px;
+    margin: 1rem 0;
+    object-fit: cover;
     width: 100%;
-    max-width: 1200px;
-    min-height: 200px;
-    background-color: #2a2a2a;
-    border-radius: 10px;
+}
+
+.skills-boxes {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    width: 100%;
+}
+
+.technical-content {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
     padding: 2rem;
+}
+
+.title-text {
+    font-size: var(--text-size-xl);
+    margin-bottom: 0.5rem;
+    margin-top: 0;
 }
 
 @media (max-width: 1000px) {
@@ -88,65 +144,18 @@
     }
 }
 
-.personal-content {
-    width: 100%;
-    min-height: 100vh;
-}
-
-.img-container {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Profile text side */
-.title-text {
-    font-size: var(--text-size-xl);
-    margin-bottom: 0.5rem;
-    margin-top: 0;
-}
-
-.profile-img {
-    width: 80%;
-    height: auto;
-    border-radius: 5%;
-    max-height: 100%;
-}
-
-.icon {
-    width: 50px;
-    height: 50px;
-    margin: 0 1rem;
-    transition: transform 0.2s;
-    cursor: pointer;
-}
-
-.icon:hover {
-    transform: scale(1.2);
-}
-
-.profile-text {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.profile-description {
-    font-size: var(--text-size-md-responsive);
-    text-align: center;
-    max-width: 80%;
-}
-
 @media (max-width: 800px) {
     .profile-content {
         flex-direction: column;
+        min-height: 80vh;
     }
     
     .profile-img {
         width: 60%;
+    }
+
+    .profile-text {
+        flex: none;
     }
 
     .img-container {
@@ -154,8 +163,8 @@
         margin-bottom: 2rem;
     }
 
-    .profile-text {
-        flex: none;
+    .read-more-container {
+        min-height: 10vh;
     }
 }
 

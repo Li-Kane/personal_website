@@ -1,33 +1,12 @@
 .home-container {
-    width: 100%;
     height: 100%;
     overflow: hidden;
-}
-
-.sim-viewer {
-    border: none;
-}
-
-.overlay-text {
-    position: absolute;
-    bottom: 1rem;
-    left: 2rem;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    z-index: 999;
-}
-
-.title-text {
-    font-size: var(--text-size-xl);
-    margin-bottom: 0px;
-}
-
-.subtitle-text {
-    font-size: var(--text-size-md-responsive);
+    width: 100%;
 }
 
 .logo {
-    position: fixed;
     bottom: 40px;
+    position: fixed;
     right: 40px;
 }
 
@@ -36,10 +15,31 @@
 }
 
 .logo img {
+    height: auto;
     pointer-events: none;
     transition: opacity 0.1s ease-in-out;
     width: 100px;
-    height: auto;
+}
+
+.overlay-text {
+    bottom: 1rem;
+    left: 2rem;
+    position: absolute;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    z-index: 999;
+}
+
+.sim-viewer {
+    border: none;
+}
+
+.subtitle-text {
+    font-size: var(--text-size-md-responsive);
+}
+
+.title-text {
+    font-size: var(--text-size-xl);
+    margin-bottom: 0px;
 }
 
 @media (max-width: 600px) {

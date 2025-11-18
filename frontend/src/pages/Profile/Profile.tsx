@@ -10,7 +10,7 @@ function Profile() {
         </div>
         <div className='profile-text'>
           <h1 className='title-text'>Hey, I'm Kane</h1>
-          <p className='profile-description'>I'm a motivated 4th year Computer Science Major with a Minor in math. 
+          <p className='profile-description'>I'm a motivated 4th year Computer Science Major at UC San Diego with a Minor in math. 
             My expertise lies in web development, robotics, and simulators. Outside of academics,
             I enjoy playing Brawl Stars and Taiko drumming.
           </p>
@@ -66,6 +66,13 @@ function Profile() {
       </div>
       <div className='personal-content'>
         <h2 className='section-title'>Personal Interests</h2>
+        <img className='personal-img' src="/profile/taiko.png" alt="Taiko" />
+        <p className='personal-description'>
+          For the past 4 years, I have been a member of the group Asayake Taiko,
+          a Japanese drumming ensemble at UC San Diego. I have furthered my passion
+          by becoming the current performance director of the club,
+          leading the club and practices alongside the other directors.
+        </p>
       </div>
     </div>
   )

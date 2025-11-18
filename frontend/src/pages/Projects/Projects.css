@@ -1,36 +1,34 @@
-.projects-container {
-    flex: 9;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-/* header */
-.projects-header {
-    flex: 2;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .header-title {
     color: white;
+    font-family: 'DirtyInfant';
     font-size: 3rem;
-    font-family: 'DirtyInfant';
 }
 
-/* content */
-.projects-content {
-    flex: 7;
+.projects-container {
     display: flex;
+    flex: 9;
+    flex-direction: column;
+    width: 100%;
 }
 
-.table-of-contents {
+.projects-content {
+    display: flex;
+    flex: 7;
+}
+
+.projects-header {
+    align-items: center;
+    display: flex;
     flex: 2;
-    font-family: 'DirtyInfant';
+    justify-content: center;
 }
 
 .projects-list {
     flex: 5;
+    font-family: 'DirtyInfant';
+}
+
+.table-of-contents {
+    flex: 2;
     font-family: 'DirtyInfant';
 }
