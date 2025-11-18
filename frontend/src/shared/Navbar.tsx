@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { NavLink, useLocation } from "react-router";
 import { useState } from "react";
 import "./layout.css";
 import { useWebSocket } from "./WebSocketContext";
@@ -6,6 +6,7 @@ import { useWebSocket } from "./WebSocketContext";
 export default function Navbar() {
     const { connectionStatus } = useWebSocket();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const location = useLocation();
 
     const toggleMenu = () => {
         setIsMenuOpen(!isMenuOpen);
@@ -16,7 +17,7 @@ export default function Navbar() {
     };
 
     return (
-        <header className="navbar">
+        <header className={`navbar ${location.pathname === '/' ? 'navbar-home' : 'navbar-default'}`}>
           <div className="status">
             <div className={`circle-status ${connectionStatus.status}`}></div>
             <p className="nav-text nav-status">Status: {connectionStatus.status}</p>

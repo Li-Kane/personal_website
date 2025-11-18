@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { useWebSocket } from './WebSocketContext'
 import { useLocation } from 'react-router'
+// @ts-ignore
+import { initKaranaViewer } from './viewer'
 
 interface KaranaViewerProps {
   serverUrl?: string
@@ -32,35 +34,8 @@ function KaranaViewer({ serverUrl, className = '' }: KaranaViewerProps) {
     // Set the global variable for the Karana viewer
     (window as any).KARANA_WEBUI_URL = wsUrl
 
-    // Check if script is already loaded
-    const existingScript = document.querySelector('script[src="/viewer.js"]')
-    let viewerCleanup: (() => void) | null = null
-    
-    if (existingScript) {
-      // Script already loaded, just initialize
-      if ((window as any).initKaranaViewer && containerRef.current) {
-        viewerCleanup = (window as any).initKaranaViewer(containerRef.current)
-      }
-    } else {
-      // Load the script first
-      const script = document.createElement('script')
-      script.src = '/viewer.js'
-      script.type = 'module'
-      
-      script.onload = () => {
-        console.log('Karana viewer loaded successfully')
-        // Initialize the viewer with our container
-        if ((window as any).initKaranaViewer && containerRef.current) {
-          viewerCleanup = (window as any).initKaranaViewer(containerRef.current)
-        }
-      }
-
-      script.onerror = () => {
-        console.error('Failed to load Karana viewer script')
-      }
-
-      document.head.appendChild(script)
-    }
+    // Initialize the viewer with our container
+    const viewerCleanup = initKaranaViewer(containerRef.current)
 
     // Cleanup function
     return () => {
@@ -74,7 +49,7 @@ function KaranaViewer({ serverUrl, className = '' }: KaranaViewerProps) {
         containerRef.current.innerHTML = ''
       }
       
-      // Clean up global variables (but keep script and initKaranaViewer for reuse)
+      // Clean up global variables
       delete (window as any).KARANA_WEBUI_URL
       delete (window as any).conn
       delete (window as any).scene

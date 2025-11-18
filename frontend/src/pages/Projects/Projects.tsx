@@ -4,7 +4,6 @@ function Projects() {
 
   return (
     <div className="projects-container">
-      <div className="navbar-spacer"/>
       <header className="projects-header">
         <h1 className="header-title">
           All Projects

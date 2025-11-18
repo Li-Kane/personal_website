@@ -1,7 +1,6 @@
 // I used this file from kdflex and modified it so I can have ssl certification
 
-(() => {
-  // node_modules/flatbuffers/mjs/constants.js
+// node_modules/flatbuffers/mjs/constants.js
   var SIZEOF_SHORT = 2;
   var SIZEOF_INT = 4;
   var FILE_IDENTIFIER_LENGTH = 4;
@@ -27859,38 +27858,37 @@ void main() {
       }
     }
   };
-  // Initialize with custom container support
-  window.initKaranaViewer = (container) => {
-    const domParent = container || document.body;
-    const conn = new Connection({ url: window.KARANA_WEBUI_URL });
-    window.conn = conn;
-    let teardown = null;
-    conn.onOpen = () => {
-      if (teardown) {
-        teardown();
-        teardown = null;
-      }
-      const handler = new MessageHandler(conn);
-      teardown = WebScene({ router: handler, domParent });
-      conn.onRecv = (event) => {
-        handler.handleMessage(event.data);
-      };
-      conn.onClose = () => {
-        handler.clear();
-      };
+// Initialize with custom container support
+export const initKaranaViewer = (container) => {
+  const domParent = container || document.body;
+  const conn = new Connection({ url: window.KARANA_WEBUI_URL });
+  window.conn = conn;
+  let teardown = null;
+  conn.onOpen = () => {
+    if (teardown) {
+      teardown();
+      teardown = null;
+    }
+    const handler = new MessageHandler(conn);
+    teardown = WebScene({ router: handler, domParent });
+    conn.onRecv = (event) => {
+      handler.handleMessage(event.data);
     };
-    
-    // Return cleanup function
-    return () => {
-      if (teardown) {
-        teardown();
-      }
-      if (conn.ws) {
-        conn.ws.close();
-      }
+    conn.onClose = () => {
+      handler.clear();
     };
   };
-})();
+  
+  // Return cleanup function
+  return () => {
+    if (teardown) {
+      teardown();
+    }
+    if (conn.ws) {
+      conn.ws.close();
+    }
+  };
+};
 /*! Bundled license information:
 
 three/build/three.core.js:

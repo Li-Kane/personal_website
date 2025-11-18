@@ -12,7 +12,7 @@ export default function AppLayout() {
     <WebSocketProvider>
       <div className="app-layout">
         <Navbar />
-        <main className="content">
+        <main>
           <KaranaViewer 
             serverUrl={SERVER_URL}
             className="sim-viewer"
