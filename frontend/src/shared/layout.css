@@ -124,25 +124,24 @@
 }
 
 .nav-mobile .nav-text {
-    font-size: 3rem;
+    font-size: var(--text-size-lg);
 }
 
 .nav-desktop .nav-text {
-    font-size: 2rem;
+    font-size: var(--text-size-md);
 }
 
 .nav-status {
-    font-size: 2rem;
+    font-size: var(--text-size-md);
 }
 
 .nav-text {
-    color: rgb(255, 255, 255);
     text-decoration: none;
-    font-family: 'DirtyInfant';
 }
 
 .nav-link {
     position: relative;
+    color: white;
 }
 
 .nav-link::after {
@@ -172,7 +171,7 @@
 }
 @media (max-width: 600px) {
     .nav-status {
-        font-size: 1rem;
+        display: none;
     }
 }
 

@@ -18,7 +18,7 @@ export default function Navbar() {
     return (
         <header className="navbar">
           <div className="status">
-            <div className={`circle-status nav-status ${connectionStatus.status}`}></div>
+            <div className={`circle-status ${connectionStatus.status}`}></div>
             <p className="nav-text nav-status">Status: {connectionStatus.status}</p>
             {connectionStatus.status === 'Queued' && (
               <p className="nav-text nav-status">({connectionStatus.queue_position})</p>

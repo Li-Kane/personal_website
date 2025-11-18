@@ -12,19 +12,17 @@
     position: absolute;
     bottom: 1rem;
     left: 2rem;
-    color: white;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-    font-family: 'DirtyInfant';
     z-index: 999;
 }
 
 .title-text {
-    font-size: calc(3vw + 2rem);
+    font-size: var(--text-size-xl);
     margin-bottom: 0px;
 }
 
 .subtitle-text {
-    font-size: calc(1.5vw + 1rem);
+    font-size: var(--text-size-md-responsive);
 }
 
 .logo {

@@ -5,10 +5,21 @@
   font-style: normal;
 }
 
+:root {
+  /* Text size variables */
+  --text-size-xl: calc(3vw + 2rem);  /* Extra large responsive */
+  --text-size-lg: 3rem;               /* Large fixed */
+  --text-size-md-responsive: calc(1.5vw + 1rem);  /* Medium responsive */
+  --text-size-md: 2rem;               /* Medium fixed */
+  --text-size-sm: 1rem;               /* Small */
+}
+
 body {
   margin: 0;
   width: 100vw;
   height: 100vh;
+  font-family: 'DirtyInfant', sans-serif;
+  color: white;
 }
 
 #root {
