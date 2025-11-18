@@ -1,24 +1,24 @@
 .project {
     padding: 2rem;
     margin-bottom: 2rem;
-    border-bottom: 2px solid #333;
 }
 
-.project:last-child {
-    border-bottom: none;
+.project-content {
+    max-width: 1000px;
 }
 
 .project-title {
-    font-size: 2.5rem;
+    font-size: var(--text-size-lg);
     margin-bottom: 1rem;
-    color: #333;
+    color: #ffffff;
+    margin: 0;
 }
 
 .project-description {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     line-height: 1.6;
     margin-bottom: 1.5rem;
-    color: #555;
+    color: #ffffff;
 }
 
 .project-details {
@@ -26,37 +26,22 @@
 }
 
 .project-details h3 {
-    font-size: 1.5rem;
-    margin: 1rem 0 0.5rem 0;
-    color: #444;
+    font-size: var(--text-size-md);
+    color: #ffffff;
 }
 
-.project-details ul {
-    list-style-type: disc;
-    margin-left: 2rem;
-    line-height: 1.8;
-}
-
-.project-details li {
-    font-size: 1.1rem;
-    color: #666;
-}
-
-.project-links {
-    margin-top: 1.5rem;
+.tech-list {
+    list-style: none;
+    padding: 0;
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
 }
 
-.project-links a {
-    padding: 0.5rem 1rem;
-    background-color: #333;
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    transition: background-color 0.3s;
-}
-
-.project-links a:hover {
-    background-color: #555;
+.title-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 3px solid #333;
 }

@@ -80,28 +80,30 @@ function Projects() {
         
         {categoryList.map(category => (
           <div key={category.id} className="category-section">
-            <div
+            <button
               className={`category-header ${selectedCategory === category.id ? 'active' : ''}`}
               onClick={() => handleCategoryClick(category.id)}
+              aria-pressed={selectedCategory === category.id}
             >
               {category.name}
-            </div>
+            </button>
             
             {selectedCategory === category.id && category.id !== 'all' && (
-              <ul className="project-list">
+              <div className="project-list" role="group" aria-label={`${category.name} projects`}>
                 {categoryProjects.map(project => (
-                  <li
+                  <button
                     key={project.id}
-                    className={selectedProject === project.id ? 'active' : ''}
+                    className={`project-item-button ${selectedProject === project.id ? 'active' : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       handleProjectClick(project.id)
                     }}
+                    aria-pressed={selectedProject === project.id}
                   >
                     {project.name}
-                  </li>
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
         ))}
