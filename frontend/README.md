@@ -1,2 +1,3 @@
-docker build -t frontend .
-docker run -p 5173:5173 -v $(pwd):/app frontend
+# TO DO 
+- Optimize images (compression and webm)
+- Add comments and write a README
