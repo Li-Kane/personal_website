@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router";
 import { useState } from "react";
-import "./layout.css";
+import styles from "./layout.module.css";
 import { useWebSocket } from "./WebSocketContext";
 
 export default function Navbar() {
@@ -17,34 +17,34 @@ export default function Navbar() {
     };
 
     return (
-        <header className={`navbar ${location.pathname === '/' ? 'navbar-home' : 'navbar-default'}`}>
-          <div className="status">
-            <div className={`circle-status ${connectionStatus.status}`}></div>
-            <p className="nav-text nav-status">Status: {connectionStatus.status}</p>
+        <header className={`${styles.navbar} ${location.pathname === '/' ? styles['navbar-home'] : styles['navbar-default']}`}>
+          <div className={styles.status}>
+            <div className={`${styles['circle-status']} ${styles[connectionStatus.status]}`}></div>
+            <p className={`${styles['nav-text']} ${styles['nav-status']}`}>Status: {connectionStatus.status}</p>
             {connectionStatus.status === 'Queued' && (
-              <p className="nav-text nav-status">({connectionStatus.queue_position})</p>
+              <p className={`${styles['nav-text']} ${styles['nav-status']}`}>({connectionStatus.queue_position})</p>
             )}
             {connectionStatus.message && (
-              <p className="nav-text nav-status">({connectionStatus.message})</p>
+              <p className={`${styles['nav-text']} ${styles['nav-status']}`}>({connectionStatus.message})</p>
             )}
           </div>
-          
-          <button className={`hamburger ${isMenuOpen ? 'open' : ''}`} onClick={toggleMenu} aria-label="Toggle menu">
+
+          <button className={`${styles.hamburger} ${isMenuOpen ? styles.open : ''}`} onClick={toggleMenu} aria-label="Toggle menu">
             <span></span>
             <span></span>
             <span></span>
           </button>
 
-          <nav className="nav-desktop">
-            <NavLink className="nav-text nav-link" to="/">Home</NavLink>
-            <NavLink className="nav-text nav-link" to="/profile">Profile</NavLink>
-            <NavLink className="nav-text nav-link" to="/projects">Projects</NavLink>
+          <nav className={styles['nav-desktop']}>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/">Home</NavLink>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/profile">Profile</NavLink>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/projects">Projects</NavLink>
           </nav>
 
-          <nav className={`nav-mobile ${isMenuOpen ? 'open' : ''}`}>
-            <NavLink className="nav-text nav-link" to="/" onClick={closeMenu}>Home</NavLink>
-            <NavLink className="nav-text nav-link" to="/profile" onClick={closeMenu}>Profile</NavLink>
-            <NavLink className="nav-text nav-link" to="/projects" onClick={closeMenu}>Projects</NavLink>
+          <nav className={`${styles['nav-mobile']} ${isMenuOpen ? styles.open : ''}`}>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/" onClick={closeMenu}>Home</NavLink>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/profile" onClick={closeMenu}>Profile</NavLink>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/projects" onClick={closeMenu}>Projects</NavLink>
           </nav>
         </header>
     )

@@ -10,6 +10,12 @@
     transform: scale(1.2);
 }
 
+.icons-container {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+
 .img-container {
     align-items: center;
     display: flex;
@@ -34,7 +40,8 @@
 
 .personal-img {
     width: 50%;
-    border-radius: 1rem;
+    min-width: 320px;
+    border-radius: 4%;
 }
 
 .profile-container {
@@ -86,7 +93,7 @@
 
 .skill-box {
     background-color: #2a2a2a;
-    border-radius: 10px;
+    border-radius: 4%;
     flex: 1;
     padding: 2rem;
     text-align: center;
@@ -111,7 +118,7 @@
 
 .skill-img {
     aspect-ratio: 4 / 3;
-    border-radius: 8px;
+    border-radius: 4%;
     margin: 1rem 0;
     object-fit: cover;
     width: 100%;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import './Projects.css'
+import styles from './Projects.module.css'
 
 // list of project components
 import PersonalWebsite from './List/PersonalWebsite'
@@ -68,32 +68,32 @@ function Projects() {
   }
 
   return (
-    <div className="projects-container">
-      <button 
-        className="toc-toggle"
+    <div className={styles['projects-container']}>
+      <button
+        className={styles['toc-toggle']}
         onClick={() => setTocExpanded(!tocExpanded)}
       >
         Projects {tocExpanded ? '▲' : '▼'}
       </button>
-      <div className={`table-of-contents ${tocExpanded ? 'toc-expanded' : 'toc-collapsed'}`}>
-        <h2 className="toc-desktop-title">Projects</h2>
-        
+      <div className={`${styles['table-of-contents']} ${tocExpanded ? styles['toc-expanded'] : styles['toc-collapsed']}`}>
+        <h2 className={styles['toc-desktop-title']}>Projects</h2>
+
         {categoryList.map(category => (
-          <div key={category.id} className="category-section">
+          <div key={category.id} className={styles['category-section']}>
             <button
-              className={`category-header ${selectedCategory === category.id ? 'active' : ''}`}
+              className={`${styles['category-header']} ${selectedCategory === category.id ? styles.active : ''}`}
               onClick={() => handleCategoryClick(category.id)}
               aria-pressed={selectedCategory === category.id}
             >
               {category.name}
             </button>
-            
+
             {selectedCategory === category.id && category.id !== 'all' && (
-              <div className="project-list" role="group" aria-label={`${category.name} projects`}>
+              <div className={styles['project-list']} role="group" aria-label={`${category.name} projects`}>
                 {categoryProjects.map(project => (
                   <button
                     key={project.id}
-                    className={`project-item-button ${selectedProject === project.id ? 'active' : ''}`}
+                    className={`${styles['project-item-button']} ${selectedProject === project.id ? styles.active : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       handleProjectClick(project.id)
@@ -108,11 +108,11 @@ function Projects() {
           </div>
         ))}
       </div>
-      <div className="projects-list">
+      <div className={styles['projects-list']}>
         {displayedProjects.map(project => {
           const Component = project.component
           return (
-            <div key={project.id} className="project-item">
+            <div key={project.id} className={styles['project-item']}>
               <Component />
             </div>
           )

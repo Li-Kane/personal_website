@@ -1,7 +1,7 @@
 // shared/AppLayout.tsx
 import { Outlet } from "react-router";
 import { WebSocketProvider } from "./WebSocketContext";
-import "./layout.css";
+import styles from "./layout.module.css";
 import Navbar from "./Navbar";
 import KaranaViewer from "./KaranaViewer";
 
@@ -10,12 +10,12 @@ export default function AppLayout() {
 
   return (
     <WebSocketProvider>
-      <div className="app-layout">
+      <div className={styles['app-layout']}>
         <Navbar />
         <main>
-          <KaranaViewer 
+          <KaranaViewer
             serverUrl={SERVER_URL}
-            className="sim-viewer"
+            className={styles['sim-viewer']}
           />
           <Outlet />
         </main>

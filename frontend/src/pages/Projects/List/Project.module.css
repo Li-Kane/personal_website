@@ -8,7 +8,7 @@
 }
 
 .project-title {
-    font-size: var(--text-size-lg);
+    font-size: var(--text-size-xl);
     margin-bottom: 1rem;
     color: #ffffff;
     margin: 0;
@@ -21,11 +21,7 @@
     color: #ffffff;
 }
 
-.project-details {
-    margin: 1.5rem 0;
-}
-
-.project-details h3 {
+.project-section {
     font-size: var(--text-size-md);
     color: #ffffff;
 }
@@ -38,10 +34,21 @@
     gap: 1rem;
 }
 
+.tech-icon {
+    cursor: pointer;
+    height: 70px;
+    transition: transform 0.2s;
+    width: 70px;
+}
+
 .title-container {
     display: flex;
     align-items: center;
     gap: 1rem;
     padding: 1rem 0;
     border-bottom: 3px solid #333;
+}
+
+.tech-icon:hover {
+    transform: scale(1.2);
 }
