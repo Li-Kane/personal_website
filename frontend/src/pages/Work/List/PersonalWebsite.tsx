@@ -42,9 +42,9 @@ function PersonalWebsite() {
             </p>
             <p className={styles['project-description']}>
                 One major challenge I faced was optimizing the simulation performance, since to cut costs I limited myself to a AWS t3 small instance with only 2 vCPUs and 2GB of RAM.
-                After extensive profiling, I addressed this by using a EULER integrator with a larger time step, lowering the contact fidelity, decreasing the 
+                After extensive profiling, I addressed this by using a euler integrator with a larger time step, lowering the contact fidelity, decreasing the 
                 render resolution and frame rate, decreasing collision mesh complexity, using visual meshes for the body, and offloading as much computation as possible from
-                the main simulation thread. In the end, the major of the bottleneck was in stepping the simulation.
+                the main simulation thread. In the end, on the simulation thread less than 2% of the runtime was spent on tasks other than stepping the simulation.
             </p>
             <p className={styles['project-description']}>
                 Average step: 18.157ms (100%)

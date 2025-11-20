@@ -4,6 +4,7 @@ import styles from './Work.module.css'
 // list of work components
 import PersonalWebsite from './List/PersonalWebsite'
 import Karana from './List/Karana'
+import TritonRobotics from './List/TR'
 
 // Define work categories
 export type Category = 'web-development' | 'robotics' | 'simulations' | 'other'
@@ -43,6 +44,12 @@ const work: Work[] = [
     name: 'Karana Dynamics Internship',
     component: Karana,
     categories: ['simulations', 'web-development']
+  },
+  {
+    id: 'triton-robotics',
+    name: 'Triton Robotics',
+    component: TritonRobotics,
+    categories: ['robotics', 'simulations']
   }
 ]
 
@@ -95,7 +102,7 @@ function Work() {
               {category.name}
             </button>
 
-            {selectedCategory === category.id && category.id !== 'all' && (
+            {selectedCategory === category.id && (
               <div className={styles['work-list']} role="group" aria-label={`${category.name} work`}>
                 {categoryWork.map(workItem => (
                   <button
