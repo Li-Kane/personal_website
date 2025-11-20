@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import styles from './Projects.module.css'
+import styles from './Work.module.css'
 
-// list of project components
+// list of work components
 import PersonalWebsite from './List/PersonalWebsite'
 
-// Define project categories
+// Define work categories
 export type Category = 'web-development' | 'robotics' | 'simulations' | 'other'
 
-// Define project data structure
-export interface Project {
+// Define work data structure
+export interface Work {
   id: string
   name: string
   component: React.ComponentType
@@ -29,54 +29,54 @@ const categoryList: CategoryInfo[] = [
   { id: 'other', name: 'Other' },
 ]
 
-// Add your projects here with their categories
-const projects: Project[] = [
-  { 
-    id: 'personal-website', 
-    name: 'Personal Website', 
+// Add your work here with their categories
+const work: Work[] = [
+  {
+    id: 'personal-website',
+    name: 'Personal Website',
     component: PersonalWebsite,
     categories: ['web-development', 'robotics', 'simulations']
   },
 ]
 
-function Projects() {
+function Work() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
-  const [selectedProject, setSelectedProject] = useState<string | null>(null)
+  const [selectedWork, setSelectedWork] = useState<string | null>(null)
   const [tocExpanded, setTocExpanded] = useState(false)
 
-  // Filter projects based on category and specific project selection
+  // Filter work based on category and specific work selection
   const filteredByCategory = selectedCategory === 'all'
-    ? projects
-    : projects.filter(p => p.categories.includes(selectedCategory))
+    ? work
+    : work.filter(p => p.categories.includes(selectedCategory))
 
-  const displayedProjects = selectedProject
-    ? filteredByCategory.filter(p => p.id === selectedProject)
+  const displayedWork = selectedWork
+    ? filteredByCategory.filter(p => p.id === selectedWork)
     : filteredByCategory
 
-  // Get projects for the selected category
-  const categoryProjects = selectedCategory === 'all'
-    ? projects
-    : projects.filter(p => p.categories.includes(selectedCategory))
+  // Get work for the selected category
+  const categoryWork = selectedCategory === 'all'
+    ? work
+    : work.filter(p => p.categories.includes(selectedCategory))
 
   const handleCategoryClick = (categoryId: Category | 'all') => {
     setSelectedCategory(categoryId)
-    setSelectedProject(null) // Reset project selection when changing category
+    setSelectedWork(null) // Reset work selection when changing category
   }
 
-  const handleProjectClick = (projectId: string) => {
-    setSelectedProject(selectedProject === projectId ? null : projectId)
+  const handleWorkClick = (workId: string) => {
+    setSelectedWork(selectedWork === workId ? null : workId)
   }
 
   return (
-    <div className={styles['projects-container']}>
+    <div className={styles['work-container']}>
       <button
         className={styles['toc-toggle']}
         onClick={() => setTocExpanded(!tocExpanded)}
       >
-        Projects {tocExpanded ? '▲' : '▼'}
+        Work {tocExpanded ? '▲' : '▼'}
       </button>
       <div className={`${styles['table-of-contents']} ${tocExpanded ? styles['toc-expanded'] : styles['toc-collapsed']}`}>
-        <h2 className={styles['toc-desktop-title']}>Projects</h2>
+        <h2 className={styles['toc-desktop-title']}>Work</h2>
 
         {categoryList.map(category => (
           <div key={category.id} className={styles['category-section']}>
@@ -89,18 +89,18 @@ function Projects() {
             </button>
 
             {selectedCategory === category.id && category.id !== 'all' && (
-              <div className={styles['project-list']} role="group" aria-label={`${category.name} projects`}>
-                {categoryProjects.map(project => (
+              <div className={styles['work-list']} role="group" aria-label={`${category.name} work`}>
+                {categoryWork.map(workItem => (
                   <button
-                    key={project.id}
-                    className={`${styles['project-item-button']} ${selectedProject === project.id ? styles.active : ''}`}
+                    key={workItem.id}
+                    className={`${styles['work-item-button']} ${selectedWork === workItem.id ? styles.active : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleProjectClick(project.id)
+                      handleWorkClick(workItem.id)
                     }}
-                    aria-pressed={selectedProject === project.id}
+                    aria-pressed={selectedWork === workItem.id}
                   >
-                    {project.name}
+                    {workItem.name}
                   </button>
                 ))}
               </div>
@@ -108,11 +108,11 @@ function Projects() {
           </div>
         ))}
       </div>
-      <div className={styles['projects-list']}>
-        {displayedProjects.map(project => {
-          const Component = project.component
+      <div className={styles['work-list']}>
+        {displayedWork.map(workItem => {
+          const Component = workItem.component
           return (
-            <div key={project.id} className={styles['project-item']}>
+            <div key={workItem.id} className={styles['work-item']}>
               <Component />
             </div>
           )
@@ -122,4 +122,4 @@ function Projects() {
   )
 }
 
-export default Projects
+export default Work

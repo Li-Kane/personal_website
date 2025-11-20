@@ -38,13 +38,13 @@ export default function Navbar() {
           <nav className={styles['nav-desktop']}>
             <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/">Home</NavLink>
             <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/profile">Profile</NavLink>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/projects">Projects</NavLink>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/work">Work</NavLink>
           </nav>
 
           <nav className={`${styles['nav-mobile']} ${isMenuOpen ? styles.open : ''}`}>
             <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/" onClick={closeMenu}>Home</NavLink>
             <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/profile" onClick={closeMenu}>Profile</NavLink>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/projects" onClick={closeMenu}>Projects</NavLink>
+            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/work" onClick={closeMenu}>Work</NavLink>
           </nav>
         </header>
     )
