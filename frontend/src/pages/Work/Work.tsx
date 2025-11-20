@@ -3,6 +3,7 @@ import styles from './Work.module.css'
 
 // list of work components
 import PersonalWebsite from './List/PersonalWebsite'
+import Karana from './List/Karana'
 
 // Define work categories
 export type Category = 'web-development' | 'robotics' | 'simulations' | 'other'
@@ -37,6 +38,12 @@ const work: Work[] = [
     component: PersonalWebsite,
     categories: ['web-development', 'robotics', 'simulations']
   },
+  {
+    id: 'karana-internship',
+    name: 'Karana Dynamics Internship',
+    component: Karana,
+    categories: ['simulations', 'web-development']
+  }
 ]
 
 function Work() {
@@ -108,7 +115,7 @@ function Work() {
           </div>
         ))}
       </div>
-      <div className={styles['work-list']}>
+      <div className={styles['work-content']}>
         {displayedWork.map(workItem => {
           const Component = workItem.component
           return (

@@ -1,10 +1,31 @@
+.icon {
+    width: 50px;
+    height: 50px;
+}
+
 .project {
     padding: 2rem;
     margin-bottom: 2rem;
+    box-sizing: border-box;
+    max-width: 100%;
 }
 
 .project-content {
     max-width: 1000px;
+}
+
+.project-date {
+    font-size: 1.5rem;
+    color: #bbbbbb;
+    margin: 0;
+}
+
+.project-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+    border-radius: 3%;
 }
 
 .project-title {
@@ -18,12 +39,13 @@
     font-size: 1.5rem;
     line-height: 1.6;
     margin-bottom: 1.5rem;
-    color: #ffffff;
+    color: #bbbbbb;
 }
 
 .project-section {
-    font-size: var(--text-size-md);
+    font-size: var(--text-size-lg);
     color: #ffffff;
+    margin-bottom: 1rem;
 }
 
 .tech-list {
@@ -43,12 +65,27 @@
 
 .title-container {
     display: flex;
-    align-items: center;
     gap: 1rem;
     padding: 1rem 0;
     border-bottom: 3px solid #333;
+    align-items: center;
 }
 
 .tech-icon:hover {
     transform: scale(1.2);
+}
+
+@media (max-width: 800px) {
+    .project {
+        padding: 1rem;
+    }
+
+    .project-content {
+        max-width: 100%;
+    }
+
+    .tech-icon {
+        height: 50px;
+        width: 50px;
+    }
 }

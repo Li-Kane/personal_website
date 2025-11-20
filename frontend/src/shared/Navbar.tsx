@@ -36,15 +36,48 @@ export default function Navbar() {
           </button>
 
           <nav className={styles['nav-desktop']}>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/">Home</NavLink>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/profile">Profile</NavLink>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/work">Work</NavLink>
+            <NavLink
+              className={({ isActive }) => `${styles['nav-text']} ${styles['nav-link']} ${isActive ? styles.active : ''}`}
+              to="/"
+            >
+              Home
+            </NavLink>
+            <NavLink
+              className={({ isActive }) => `${styles['nav-text']} ${styles['nav-link']} ${isActive ? styles.active : ''}`}
+              to="/profile"
+            >
+              Profile
+            </NavLink>
+            <NavLink
+              className={({ isActive }) => `${styles['nav-text']} ${styles['nav-link']} ${isActive ? styles.active : ''}`}
+              to="/work"
+            >
+              Work
+            </NavLink>
           </nav>
 
           <nav className={`${styles['nav-mobile']} ${isMenuOpen ? styles.open : ''}`}>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/" onClick={closeMenu}>Home</NavLink>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/profile" onClick={closeMenu}>Profile</NavLink>
-            <NavLink className={`${styles['nav-text']} ${styles['nav-link']}`} to="/work" onClick={closeMenu}>Work</NavLink>
+            <NavLink
+              className={({ isActive }) => `${styles['nav-text']} ${styles['nav-link']} ${isActive ? styles.active : ''}`}
+              to="/"
+              onClick={closeMenu}
+            >
+              Home
+            </NavLink>
+            <NavLink
+              className={({ isActive }) => `${styles['nav-text']} ${styles['nav-link']} ${isActive ? styles.active : ''}`}
+              to="/profile"
+              onClick={closeMenu}
+            >
+              Profile
+            </NavLink>
+            <NavLink
+              className={({ isActive }) => `${styles['nav-text']} ${styles['nav-link']} ${isActive ? styles.active : ''}`}
+              to="/work"
+              onClick={closeMenu}
+            >
+              Work
+            </NavLink>
           </nav>
         </header>
     )

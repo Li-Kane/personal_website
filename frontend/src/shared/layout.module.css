@@ -91,25 +91,17 @@
 .nav-link {
     color: white;
     position: relative;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
 }
 
-.nav-link::after {
-    background-color: white;
-    bottom: -4px;
-    content: '';
-    height: 2px;
-    left: 50%;
-    position: absolute;
-    transform: translateX(-50%);
-    transition: width 0.3s ease-in-out;
-    width: 0;
-}
-
-.nav-link:hover::after {
-    width: 100%;
+.nav-link:hover {
+    background-color: #555;
 }
 
 .nav-link.active {
+    background-color: #333;
     font-weight: bold;
 }
 
@@ -136,6 +128,10 @@
 
 .nav-mobile .nav-text {
     font-size: var(--text-size-xl);
+}
+
+.nav-mobile .nav-link {
+    padding: 1rem 2rem;
 }
 
 .nav-status {
