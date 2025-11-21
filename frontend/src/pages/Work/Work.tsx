@@ -83,27 +83,30 @@ const work: Work[] = [
 
 function Work() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
+  const [selectedWork, setSelectedWork] = useState<string | null>(null)
   const [tocExpanded, setTocExpanded] = useState(false)
 
-  // Filter work based on category only
-  const displayedWork = selectedCategory === 'all'
+  // Filter work based on category and specific work selection
+  const filteredByCategory = selectedCategory === 'all'
     ? work
     : work.filter(p => p.categories.includes(selectedCategory))
 
-  // Get work for the selected category (for sidebar display)
+  const displayedWork = selectedWork
+    ? filteredByCategory.filter(p => p.id === selectedWork)
+    : filteredByCategory
+
+  // Get work for the selected category
   const categoryWork = selectedCategory === 'all'
     ? work
     : work.filter(p => p.categories.includes(selectedCategory))
 
   const handleCategoryClick = (categoryId: Category | 'all') => {
     setSelectedCategory(categoryId)
+    setSelectedWork(null) // Reset work selection when changing category
   }
 
   const handleWorkClick = (workId: string) => {
-    const element = document.getElementById(workId)
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }
+    setSelectedWork(selectedWork === workId ? null : workId)
   }
 
   return (
@@ -132,11 +135,12 @@ function Work() {
                 {categoryWork.map(workItem => (
                   <button
                     key={workItem.id}
-                    className={styles['work-item-button']}
+                    className={`${styles['work-item-button']} ${selectedWork === workItem.id ? styles.active : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       handleWorkClick(workItem.id)
                     }}
+                    aria-pressed={selectedWork === workItem.id}
                   >
                     {workItem.name}
                   </button>
@@ -150,7 +154,7 @@ function Work() {
         {displayedWork.map(workItem => {
           const Component = workItem.component
           return (
-            <div key={workItem.id} id={workItem.id} className={styles['work-item']}>
+            <div key={workItem.id} className={styles['work-item']}>
               <Component />
             </div>
           )
