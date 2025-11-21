@@ -1,26 +1,18 @@
-# setup server
-1. Add evaluation.license and a kdflex-0.9.19-Linux.deb to server/docker_files
+# Personal Website
+A personal portfolio demonstrating my experience in robotics, simulators, and web development. On my AWS EC2 server, I run a [kdFlex](https://www.karanadyn.com/) simulation in a docker container where a Spot robot autonomously navigates to a target. It communicates with my React frontend through websockets and an nginx proxy to have Spot follow wherever the user's mouse is.
+
+## Server
+1. Add evaluation.license and a kdflex-0.9.19-Linux.deb to server/docker_files from www.karanadyn.com
 2. cd into server and run
-docker build -t likane0136/personal_websie_server:latest .
-docker run -p 3247:3247 -p 8080:8080 likane0136/personal_websie_server:latest 
-docker exec -it <container> bash
-3. upload to a docker registry (to pull on EC2)
-docker push likane0136/personal_websie_server:latest
+```
+docker build -t name:tag .
+docker run -p 3247:3247 -p name:tag
+```
 
-# delete
-docker stop $(docker ps -aq)
-docker rm $(docker ps -aq)
-docker rmi $(docker images -a -q)
-
-## Setup Checklist
-1. Setup ECS
-    - Push Server container to ECR
-    - Setup task, VPC, subnets, security groups
-    - Spin up a container and allow me to see it's url in the browser 
-    - Allow me to connect to container's websocket url
-2. Setup AWS API
-    - Allow containers to be orchestrated from an API call
-    - Container warming, automatic shutdown, etc.
-    - Cloudwatch events
-3. Setup frontend
-    - Deploy frontend to call API and get URLS
+## Frontend
+1. Cd into frontend and run
+```
+npm install
+npm run dev
+```
+2. There is already a github actions workflow configured to deploy the website to github pages
