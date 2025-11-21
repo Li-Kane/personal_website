@@ -31,6 +31,7 @@ function PersonalWebsite() {
                 <img title='Python' className={styles['tech-icon']} src="/icons/python.svg" alt="Python" />
                 <img title='Docker' className={styles['tech-icon']} src="/icons/docker.svg" alt="Docker" />
                 <img title='Nginx' className={styles['tech-icon']} src="/icons/nginx.svg" alt="Nginx" />
+                <img title='TypeScript' className={styles['tech-icon']} src="/icons/typescript.svg" alt="TypeScript" />
             </div>
 
             <h3 className={styles['project-section']}>The Simulation</h3>

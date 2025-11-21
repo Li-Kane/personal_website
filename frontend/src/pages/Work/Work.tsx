@@ -5,6 +5,10 @@ import styles from './Work.module.css'
 import PersonalWebsite from './List/PersonalWebsite'
 import Karana from './List/Karana'
 import TritonRobotics from './List/TR'
+import ARC from './List/ARC'
+import Dougu from './List/Dougu'
+import Tutor from './List/Tutor'
+import Cmnist from './List/Cmnist'
 
 // Define work categories
 export type Category = 'web-development' | 'robotics' | 'simulations' | 'other'
@@ -50,6 +54,30 @@ const work: Work[] = [
     name: 'Triton Robotics',
     component: TritonRobotics,
     categories: ['robotics', 'simulations']
+  },
+  {
+    id: 'arc-lab',
+    name: 'Advanced Robotics and Controls Lab',
+    component: ARC,
+    categories: ['simulations', 'robotics']
+  },
+  {
+    id: 'dougu',
+    name: 'Dougu',
+    component: Dougu,
+    categories: ['web-development', 'other']
+  }, 
+  {
+    id: 'tutoring',
+    name: 'Tutoring',
+    component: Tutor,
+    categories: ['other']
+  },
+  {
+    id: 'cmnist',
+    name: 'Cmnist',
+    component: Cmnist,
+    categories: ['web-development', 'other']
   }
 ]
 
