@@ -1,3 +1,4 @@
+import { Link } from 'react-router'
 import styles from './Profile.module.css'
 
 function Profile() {
@@ -36,15 +37,15 @@ function Profile() {
       <div className={styles['technical-content']}>
         <h2 className={styles['section-title']}>Technical Skills</h2>
         <div className={styles['skills-boxes']}>
-          <div className={styles['skill-box']}>
+          <Link to="/work/web-development" className={styles['skill-box']}>
             <h3>Web Development</h3>
             <img className={styles['skill-img']} src="/profile/webdev.png" alt="Web Development" />
             <p className={styles['skill-description']}>
               Having built multiple websites and a mobile app, I have fullstack
               experience in both web and mobile applications.
             </p>
-          </div>
-          <div className={styles['skill-box']}>
+          </Link>
+          <Link to="/work/robotics" className={styles['skill-box']}>
             <h3>Robotics</h3>
             <img className={styles['skill-img']} src="/profile/robotics.png" alt="Robotics" />
             <p className={styles['skill-description']}>
@@ -52,8 +53,8 @@ function Profile() {
               for a real-world robot that can
               autonomously navigate and shoot targets.
             </p>
-          </div>
-          <div className={styles['skill-box']}>
+          </Link>
+          <Link to="/work/simulators" className={styles['skill-box']}>
             <h3>Simulators</h3>
             <img className={styles['skill-img']} src="/profile/simulator.png" alt="Simulators" />
             <p className={styles['skill-description']}>
@@ -61,7 +62,7 @@ function Profile() {
               and tested scenarios for simulators such as
               Maniskill, kdFlex, and IsaacSim.
             </p>
-          </div>
+          </Link>
         </div>
       </div>
       <div className={styles['personal-content']}>

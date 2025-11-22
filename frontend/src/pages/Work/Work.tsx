@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useParams, useNavigate } from 'react-router'
 import styles from './Work.module.css'
 
 // list of work components
@@ -11,7 +12,7 @@ import Tutor from './List/Tutor'
 import Cmnist from './List/Cmnist'
 
 // Define work categories
-export type Category = 'web-development' | 'robotics' | 'simulations' | 'other'
+export type Category = 'web-development' | 'robotics' | 'simulators' | 'other'
 
 // Define work data structure
 export interface Work {
@@ -31,7 +32,7 @@ const categoryList: CategoryInfo[] = [
   { id: 'all', name: 'All' },
   { id: 'web-development', name: 'Web Development' },
   { id: 'robotics', name: 'Robotics' },
-  { id: 'simulations', name: 'Simulations' },
+  { id: 'simulators', name: 'Simulators' },
   { id: 'other', name: 'Other' },
 ]
 
@@ -41,32 +42,32 @@ const work: Work[] = [
     id: 'personal-website',
     name: 'Personal Website',
     component: PersonalWebsite,
-    categories: ['web-development', 'robotics', 'simulations']
+    categories: ['web-development', 'robotics', 'simulators']
   },
   {
     id: 'karana-internship',
     name: 'Karana Dynamics Internship',
     component: Karana,
-    categories: ['simulations', 'web-development']
+    categories: ['simulators', 'web-development']
   },
   {
     id: 'triton-robotics',
     name: 'Triton Robotics',
     component: TritonRobotics,
-    categories: ['robotics', 'simulations']
+    categories: ['robotics', 'simulators']
   },
   {
     id: 'arc-lab',
     name: 'Advanced Robotics and Controls Lab',
     component: ARC,
-    categories: ['simulations', 'robotics']
+    categories: ['simulators', 'robotics']
   },
   {
     id: 'dougu',
     name: 'Dougu',
     component: Dougu,
     categories: ['web-development', 'other']
-  }, 
+  },
   {
     id: 'tutoring',
     name: 'Tutoring',
@@ -82,7 +83,15 @@ const work: Work[] = [
 ]
 
 function Work() {
-  const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
+  const { category } = useParams()
+  const navigate = useNavigate()
+
+  // Determine selected category from URL or default to 'all'
+  const isValidCategory = (c: string | undefined): c is Category => {
+    return c !== undefined && ['web-development', 'robotics', 'simulators', 'other'].includes(c)
+  }
+  const selectedCategory: Category | 'all' = isValidCategory(category) ? category : 'all'
+
   const [selectedWork, setSelectedWork] = useState<string | null>(null)
   const [activeWorkId, setActiveWorkId] = useState<string | null>(null)
   const [tocExpanded, setTocExpanded] = useState(false)
@@ -103,7 +112,11 @@ function Work() {
     : work.filter(p => p.categories.includes(selectedCategory))
 
   const handleCategoryClick = (categoryId: Category | 'all') => {
-    setSelectedCategory(categoryId)
+    if (categoryId === 'all') {
+      navigate('/work')
+    } else {
+      navigate(`/work/${categoryId}`)
+    }
     setSelectedWork(null) // Reset work selection when changing category
   }
 
