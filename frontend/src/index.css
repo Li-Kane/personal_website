@@ -5,13 +5,18 @@
   font-style: normal;
 }
 
+/* Text size variables */
 :root {
-  /* Text size variables */
-  --text-size-xl: calc(3vw + 2rem);  /* Extra large responsive */
-  --text-size-lg: 3rem;               /* Large fixed */
-  --text-size-md-responsive: calc(1.5vw + 1rem);  /* Medium responsive */
-  --text-size-md: 2rem;               /* Medium fixed */
-  --text-size-sm: 1rem;               /* Small */
+  /* Extra large responsive */
+  --text-size-xl: calc(3vw + 2rem);
+  /* Large fixed */
+  --text-size-lg: 3rem;
+  /* Medium responsive */
+  --text-size-md-responsive: calc(1.5vw + 1rem);
+  /* Medium fixed */
+  --text-size-md: 2rem;
+  /* Small */
+  --text-size-sm: 1rem;
 }
 
 body {
@@ -27,4 +32,8 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
+}
+
+a {
+  color: #ADD8E6;
 }
