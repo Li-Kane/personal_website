@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styles from './Work.module.css'
 
 // list of work components
@@ -84,7 +84,9 @@ const work: Work[] = [
 function Work() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all')
   const [selectedWork, setSelectedWork] = useState<string | null>(null)
+  const [activeWorkId, setActiveWorkId] = useState<string | null>(null)
   const [tocExpanded, setTocExpanded] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // Filter work based on category and specific work selection
   const filteredByCategory = selectedCategory === 'all'
@@ -108,6 +110,28 @@ function Work() {
   const handleWorkClick = (workId: string) => {
     setSelectedWork(selectedWork === workId ? null : workId)
   }
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveWorkId(entry.target.id)
+          }
+        })
+      },
+      {
+        root: contentRef.current,
+        rootMargin: '-10% 0px -80% 0px',
+        threshold: 0
+      }
+    )
+
+    const workItems = contentRef.current?.querySelectorAll(`.${styles['work-item']}`)
+    workItems?.forEach((item) => observer.observe(item))
+
+    return () => observer.disconnect()
+  }, [displayedWork, selectedCategory])
 
   return (
     <div className={styles['work-container']}>
@@ -135,7 +159,7 @@ function Work() {
                 {categoryWork.map(workItem => (
                   <button
                     key={workItem.id}
-                    className={`${styles['work-item-button']} ${selectedWork === workItem.id ? styles.active : ''}`}
+                    className={`${styles['work-item-button']} ${(selectedWork === workItem.id || (!selectedWork && activeWorkId === workItem.id)) ? styles.active : ''}`}
                     onClick={(e) => {
                       e.stopPropagation()
                       handleWorkClick(workItem.id)
@@ -150,11 +174,11 @@ function Work() {
           </div>
         ))}
       </div>
-      <div className={styles['work-content']}>
+      <div className={styles['work-content']} ref={contentRef}>
         {displayedWork.map(workItem => {
           const Component = workItem.component
           return (
-            <div key={workItem.id} className={styles['work-item']}>
+            <div key={workItem.id} id={workItem.id} className={styles['work-item']}>
               <Component />
             </div>
           )
