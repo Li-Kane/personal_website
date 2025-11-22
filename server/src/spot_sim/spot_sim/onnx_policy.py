@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """
 ONNX Runtime implementation of the Spot policy network.
 Provides faster inference than PyTorch with smaller binary size.

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Copyright 2015 Open Source Robotics Foundation, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

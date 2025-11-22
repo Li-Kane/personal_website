@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 from setuptools import find_packages, setup
 
 package_name = 'server'

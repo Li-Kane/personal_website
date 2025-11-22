@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { Link } from 'react-router'
 import styles from './Profile.module.css'
 

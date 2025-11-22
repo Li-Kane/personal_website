@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import styles from './Project.module.css'
 
 function Tutor() {

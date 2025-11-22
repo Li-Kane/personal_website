@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 import { useEffect, useRef } from 'react'
 import { useWebSocket } from './WebSocketContext'
 import { useLocation } from 'react-router'

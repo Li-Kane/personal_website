@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2026 Kane Li <kaneli200456@gmail.com>
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // I used this file from kdflex and modified it so I can have ssl certification
 
 // node_modules/flatbuffers/mjs/constants.js
