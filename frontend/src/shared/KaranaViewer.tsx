@@ -8,7 +8,8 @@ import { useLocation } from 'react-router'
 import { initKaranaViewer } from './viewer'
 
 interface KaranaViewerProps {
-  serverUrl?: string
+  simWsUrl?: string
+  simHealthUrl?: string
   className?: string
 }
 
@@ -16,7 +17,7 @@ interface KaranaViewerProps {
 Used to load and show the custom Karana viewer I modified 
 from kdFlex. I need to do this so I can route to my ssl certified server.
 */
-function KaranaViewer({ serverUrl, className = '' }: KaranaViewerProps) {
+function KaranaViewer({ simWsUrl, simHealthUrl, className = '' }: KaranaViewerProps) {
     const location = useLocation()
     const containerRef = useRef<HTMLDivElement>(null)
     const { ws, connectionStatus } = useWebSocket()
@@ -26,19 +27,8 @@ function KaranaViewer({ serverUrl, className = '' }: KaranaViewerProps) {
   useEffect(() => {
     if (!containerRef.current) return
 
-    // Extract hostname:port from serverUrl (remove http:// or https://)
-    let wsUrl: string
-    if (serverUrl) {
-      wsUrl = serverUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
-    } else {
-      wsUrl = window.location.host
-    }
-
-    // Set the global variable for the Karana viewer
-    (window as any).KARANA_WEBUI_URL = wsUrl
-
     // Initialize the viewer with our container
-    const viewerCleanup = initKaranaViewer(containerRef.current)
+    const viewerCleanup = initKaranaViewer(containerRef.current, simWsUrl, simHealthUrl)
 
     // Cleanup function
     return () => {
@@ -53,7 +43,6 @@ function KaranaViewer({ serverUrl, className = '' }: KaranaViewerProps) {
       }
       
       // Clean up global variables
-      delete (window as any).KARANA_WEBUI_URL
       delete (window as any).conn
       delete (window as any).scene
       delete (window as any).object_map
@@ -61,7 +50,7 @@ function KaranaViewer({ serverUrl, className = '' }: KaranaViewerProps) {
       delete (window as any).hud_camera
       delete (window as any).shadow_light
     }
-  }, [serverUrl])
+  }, [simWsUrl, simHealthUrl])
 
   const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
         if (ws && ws.readyState === WebSocket.OPEN && containerRef.current && connectionStatus.status === 'Connected') {

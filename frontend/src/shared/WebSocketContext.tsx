@@ -33,7 +33,7 @@ export function WebSocketProvider({ children }: WebSocketProviderProps) {
   const ws = useRef<WebSocket | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<Connection>({ status: 'Disconnected' })
 
-  const WS_URL = import.meta.env.VITE_WS_URL
+  const WS_URL = import.meta.env.VITE_CONTROLS_WS_URL
 
   useEffect(() => {
     ws.current = new WebSocket(WS_URL)

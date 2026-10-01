@@ -1,0 +1,27 @@
+:80 {
+    # Intercept OPTIONS requests for CORS preflight
+    @options method OPTIONS
+    handle @options {
+        header Access-Control-Allow-Origin "*"
+        header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        header Access-Control-Allow-Headers "*"
+        respond 204
+    }
+
+    # Proxy WebSocket to python server (8080)
+    handle_path /ws* {
+        reverse_proxy server:8080
+    }
+
+    # Proxy Simulation server (3247)
+    handle_path /sim_server* {
+        reverse_proxy server:3247 {
+            header_down Access-Control-Allow-Origin "*"
+        }
+    }
+
+    # Proxy frontend requests to Vite dev server
+    handle {
+        reverse_proxy frontend:5173
+    }
+}

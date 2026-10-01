@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_SIM_WS_URL=ws://localhost/sim_server/ws
+      - VITE_SIM_HEALTH_URL=http://localhost/sim_server/health
+      - VITE_CONTROLS_WS_URL=ws://localhost/ws
+      - CHOKIDAR_USEPOLLING=true
+
+  server:
+    build:
+      context: ./server
+    expose:
+      - "3247"
+      - "8080"
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - frontend
+      - server

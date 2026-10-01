@@ -9,7 +9,8 @@ import Navbar from "./Navbar";
 import KaranaViewer from "./KaranaViewer";
 
 export default function AppLayout() {
-  const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const SIM_WS_URL = import.meta.env.VITE_SIM_WS_URL;
+  const SIM_HEALTH_URL = import.meta.env.VITE_SIM_HEALTH_URL;
 
   return (
     <WebSocketProvider>
@@ -17,7 +18,8 @@ export default function AppLayout() {
         <Navbar />
         <main>
           <KaranaViewer
-            serverUrl={SERVER_URL}
+            simWsUrl={SIM_WS_URL}
+            simHealthUrl={SIM_HEALTH_URL}
             className={styles['sim-viewer']}
           />
           <Outlet />

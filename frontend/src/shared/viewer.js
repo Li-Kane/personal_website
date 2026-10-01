@@ -27762,9 +27762,9 @@ void main() {
 
   // src/render.ts
   var Connection = class {
-    constructor({ url, onOpen, onRecv, onClose }) {
-      this.wsUrl = `wss://${url}/viewer`;
-      this.healthUrl = `https://${url}/health`;
+    constructor({ wsUrl, healthUrl, onOpen, onRecv, onClose }) {
+      this.wsUrl = wsUrl;
+      this.healthUrl = healthUrl;
       this.ws = null;
       this.onOpen = onOpen;
       this.onClose = onClose;
@@ -27862,9 +27862,9 @@ void main() {
     }
   };
 // Initialize with custom container support
-export const initKaranaViewer = (container) => {
+export const initKaranaViewer = (container, wsUrl, healthUrl) => {
   const domParent = container || document.body;
-  const conn = new Connection({ url: window.KARANA_WEBUI_URL });
+  const conn = new Connection({ wsUrl, healthUrl });
   window.conn = conn;
   let teardown = null;
   conn.onOpen = () => {
