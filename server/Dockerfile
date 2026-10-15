@@ -42,9 +42,13 @@ ENV KARANA_LICENSE_FILE=/opt/kdflex/evaluation.license
 EXPOSE 3247
 EXPOSE 8080
 
-# copy the install files
-COPY ./install /server/install
+# copy the files
+COPY ./src /server/src
 COPY ./launch /server/launch
+
+# Build the workspace
+WORKDIR /server
+RUN /bin/bash -c "source /opt/ros/jazzy/setup.bash && colcon build"
 
 # source ROS2 and the workspace
 WORKDIR /server
