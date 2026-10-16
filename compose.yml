@@ -1,0 +1,31 @@
+services:
+  pw-frontend:
+    container_name: pw-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - VITE_SIM_WS_URL=wss://kaneliportfolio.com/sim_server/ws
+        - VITE_SIM_HEALTH_URL=https://kaneliportfolio.com/sim_server/health
+        - VITE_CONTROLS_WS_URL=wss://kaneliportfolio.com/ws
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - caddy
+
+  pw-server:
+    container_name: pw-server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "3247"
+      - "8080"
+    networks:
+      - caddy
+
+networks:
+  caddy:
+    name: caddy

@@ -13,6 +13,9 @@ npm run dev
 ```
 
 ## Run together in local dev:
+```bash
+docker compose -f docker-compose.yml up --build
 ```
-docker compose up --build
-```
+
+## Production Deployment
+The website is deployed on a home-server and is therefore managed as a submodule of that server. A custom compose.yml and Dockerfile.prod is used for production.
